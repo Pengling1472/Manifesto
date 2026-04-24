@@ -1,0 +1,27 @@
+@font-face {
+	font-family: 'telegraf-regular';
+	src: url( ./assets/fonts/Telegraf_Regular.otf ) format( 'opentype' );
+}
+
+@font-face {
+	font-family: 'telegraf-bold';
+	src: url( ./assets/fonts/Telegraf_Bold.otf ) format( 'opentype' );
+}
+
+* {
+	font-family: 'telegraf-regular';
+	user-select: none;
+	color: white;	
+	/* -webkit-tap-highlight-color: transparent; */
+}
+
+body {
+	margin: 0;
+	background: #000;
+}
+
+.fun-canvas {
+	width: 100%;
+	/* image-rendering: pixelated; */
+	/* box-shadow: 0 4px 30px rgba( 0, 0, 0, 0.25 ); */
+}
