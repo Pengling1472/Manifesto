@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Shape, Circle, Square } from '../models/FunCanvas.models'
+import { Shape, Circle, Square, Triangle } from '../models/FunCanvas.models'
 import { Node } from '../models/Node.models.tsx'
 
 export default function FunCanvas() {
@@ -70,8 +70,17 @@ export default function FunCanvas() {
 		canvas.width = 1920
 		canvas.height = 1080
 		
-		components.current.push( new Circle( canvas.width / 2, canvas.height / 2, "Rhythym" ) )
-		components.current.push( new Square( canvas.width / 6, canvas.height / 2, "Making Changes" ) )
+		components.current.push( new Circle( canvas.width * 0.25, canvas.height * 0.25, "Rhythym" ) )
+		components.current.push( new Circle( canvas.width * 0.5, canvas.height * 0.25, "Diversity" ) )
+		components.current.push( new Circle( canvas.width * 0.75, canvas.height * 0.25, "Surpises" ) )
+
+		components.current.push( new Square( canvas.width * 0.25, canvas.height * 0.5, "Making/Changes" ) )
+		components.current.push( new Square( canvas.width * 0.5, canvas.height * 0.5, "Bringing/it to life" ) )
+		components.current.push( new Square( canvas.width * 0.75, canvas.height * 0.5, "Outside/of the grid" ) )
+		
+		components.current.push( new Triangle( canvas.width * 0.25, canvas.height * 0.75, "Fluid" ) )
+		components.current.push( new Triangle( canvas.width * 0.5, canvas.height * 0.75, "Fearless" ) )
+		components.current.push( new Triangle( canvas.width * 0.75, canvas.height * 0.75, "Colla-/borative" ) )
 		
 		requestRef.current = requestAnimationFrame( () => loop( lastTime.current ) )
 		
