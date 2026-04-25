@@ -1,4 +1,9 @@
 import { Node } from "./Node.models.tsx"
+import Perlin from "./perlin.tsx"
+
+import Matter from "matter-js"
+
+const noise = new Perlin( 1 )
 
 export enum ShapeType {
 	Circle,
@@ -6,20 +11,8 @@ export enum ShapeType {
 	Triangle,
 }
 
-function Collide( x1: number, y1: number, dx1: number, dy1: number, x2: number, y2: number, dx2: number, dy2: number ) {
-	let nx: number = x2 - x1
-	let ny: number = y2 - y1
-	let vx: number = dx1 - dx2
-	let vy: number = dy1 - dy2
-	
-	let k: number = ( vx * nx + vy * ny ) / ( Math.pow( nx, 2 ) + Math.pow( ny, 2 ) )
-	
-	let fx1 = dx1 - k * nx
-	let fy1 = dy1 - k * ny
-	let fx2 = dx2 - k * nx
-	let fy2 = dy2 - k * ny
-	
-	return [ fx1, fy1, fx2, fy2 ]
+const rgb = ( r: number, g: number, b: number ) => {
+	return `rgb( ${r}, ${g}, ${b} )`
 }
 
 export class Shape extends Node {
@@ -27,13 +20,25 @@ export class Shape extends Node {
 	text: string
 	targetX: number
 	targetY: number 
-	constructor( x: number, y: number, type: ShapeType, text: string ) {
+	dx: number
+	dy: number
+	engine: Matter.Engine
+	body: Matter.Body
+	dragged: boolean
+	scale: number
+	constructor( x: number, y: number, type: ShapeType, text: string, engine: Matter.Engine ) {
 		super( x, y )
 
 		this.type = type
 		this.text = text
 		this.targetX = x
 		this.targetY = y
+		this.dx = 0
+		this.dy = 0
+		this.engine = engine
+		this.dragged = false
+		this.scale = 0
+		this.body = Matter.Bodies.circle( this.x, this.y, 1 )
 	}
 	pressed( _x: number, _y: number ): boolean { return false }
 	setVelocity( x: number, y: number ): void {
@@ -43,24 +48,35 @@ export class Shape extends Node {
 }
 
 export class Circle extends Shape {
-	dx: number
-	dy: number
-	constructor( x: number, y: number, text: string ) {
-		super( x, y, ShapeType.Circle, text )
+	radius: number
+	constructor( x: number, y: number, text: string, engine: Matter.Engine ) {
+		super( x, y, ShapeType.Circle, text, engine )
 		
-		this.dx = 0
-		this.dy = 0
+		this.radius = 125
+		this.body = Matter.Bodies.circle( this.x, this.y, this.radius )
+
+		Matter.World.add( engine.world, this.body )
 	}
 	override draw( ctx: CanvasRenderingContext2D ) {
-		ctx.fillStyle = "#fff"
+		const position = this.body.position
+		const angle = this.body.angle
+
+		ctx.save()
+
+		ctx.translate( position.x, position.y )
+		ctx.rotate( angle )
+		ctx.scale( 1 + this.scale * 0.25, 1 + this.scale * 0.25 )
+		ctx.translate( -position.x, -position.y )
+
+		ctx.fillStyle = "#000"
 		
 		ctx.beginPath()
-		ctx.arc( this.x, this.y, 100, 0, 2 * Math.PI )
+		ctx.arc( position.x, position.y, this.radius, 0, 2 * Math.PI )
 		ctx.fill()
 
 		ctx.font = "30px telegraf-bold"
 		
-		ctx.fillStyle = "#111"
+		ctx.fillStyle = "#fff"
 		ctx.textBaseline = "middle"
 		ctx.textAlign = "center"
 		
@@ -68,42 +84,60 @@ export class Circle extends Shape {
 		const gap = 45
 
 		for ( let i = 0; i < texts.length; i++ ) {
-			ctx.fillText( texts[ i ], this.x, this.y + i * gap - gap * ( texts.length - 1 ) / 2 )
+			ctx.fillText( texts[ i ], position.x, position.y + i * gap - gap * ( texts.length - 1 ) / 2 )
 		}
+
+		ctx.restore()
 	}
 	override process( canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, delta: number, nodes: Node[] ) {
-		this.x
-		this.y
-		this.dx
-		this.dy
-		
-		if ( ( Math.sqrt( Math.pow( this.targetX - this.x, 2 ) + Math.pow( this.targetY - this.y, 2 ) ) ) > 0.5 ) {
-			let dx = ( this.targetX - this.x ) / 100
-			let dy = ( this.targetY - this.y ) / 100
-			
-			this.x += dx * delta
-			this.y += dy * delta
-		}
+		this.scale = Math.min( Math.max( ( this.dragged ? 0.01 : -0.01 ) * delta + this.scale, 0 ), 1 )
 
 		this.draw( ctx )
 	}
 	override pressed( x: number, y: number ) {
-		return ( Math.sqrt( Math.pow( x - this.x, 2 ) + Math.pow( y - this.y, 2 ) ) ) <= 100
+		const position = this.body.position
+
+		return ( Math.sqrt( Math.pow( x - position.x, 2 ) + Math.pow( y - position.y, 2 ) ) ) <= 100
 	}
 }
 
 export class Square extends Shape {
-	constructor( x: number, y: number, text: string ) {
-		super( x, y, ShapeType.Square, text )
+	noiseIncrement: number
+	width: number
+	height: number
+	constructor( x: number, y: number, text: string, engine: Matter.Engine ) {
+		super( x, y, ShapeType.Square, text, engine )
+
+		this.noiseIncrement = 0
+		this.width = 250
+		this.height = 250
+
+		this.body = Matter.Bodies.rectangle( x, y, this.width, this.height )
+
+		Matter.World.add( engine.world, this.body )
 	}
 	override draw( ctx: CanvasRenderingContext2D ) {
-		ctx.fillStyle = "#ffffff"
-		
-		ctx.fillRect( this.x - 100, this.y - 100, 200, 200 )
+		const position = this.body.position
+		const angle = this.body.angle
 
+		ctx.save()
+		ctx.translate( position.x, position.y )
+		ctx.rotate( angle )
+		ctx.scale( 1 + this.scale * 0.25, 1 + this.scale * 0.25 )
+		ctx.translate( -position.x, -position.y )
+
+		for ( let i = 0; i < this.width / 5; i++ ) {
+			for ( let j = 0; j < this.height / 5; j++ ) {
+				let noiseValue = noise.perlin3( i * 0.1, j * 0.05, this.noiseIncrement )
+				noiseValue = Math.floor( ( noiseValue + 1 ) / 2 * 255 )
+
+				ctx.fillStyle = rgb( noiseValue, 60, noiseValue )
+				ctx.fillRect( position.x - this.width / 2 + i * 5, position.y - this.height / 2 + j * 5, 6, 6 )
+			}
+		}
 		ctx.font = "30px telegraf-bold"
 
-		ctx.fillStyle = "#111"
+		ctx.fillStyle = "#fff"
 		ctx.textBaseline = "middle"
 		ctx.textAlign = "center"
 
@@ -111,43 +145,59 @@ export class Square extends Shape {
 		const gap = 45
 
 		for ( let i = 0; i < texts.length; i++ ) {
-			ctx.fillText( texts[ i ], this.x, this.y + i * gap - gap * ( texts.length - 1 ) / 2 )
+			ctx.fillText( texts[ i ], position.x, position.y + i * gap - gap * ( texts.length - 1 ) / 2 )
 		}
+		ctx.restore()
+
 	}
 	override process( canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, delta: number, nodes: Node[] ) {
-		if ( ( Math.sqrt( Math.pow( this.targetX - this.x, 2 ) + Math.pow( this.targetY - this.y, 2 ) ) ) > 0.5 ) {
-			let dx = ( this.targetX - this.x ) / 100
-			let dy = ( this.targetY - this.y ) / 100
-			
-			this.x += dx * delta
-			this.y += dy * delta
-		}
+		this.noiseIncrement += 0.005
+		this.scale = Math.min( Math.max( ( this.dragged ? 0.01 : -0.01 ) * delta + this.scale, 0 ), 1 )
 
 		this.draw( ctx )
-	}
-	override pressed( x: number, y: number ) {
-		return x > this.x - 100 && x < this.x + 100 && y > this.y - 100 && y < this.y + 100
 	}
 }
 
 export class Triangle extends Shape {
-	constructor( x: number, y: number, text: string ) {
-		super( x, y, ShapeType.Triangle, text )
+	width: number
+	height: number
+	constructor( x: number, y: number, text: string, engine: Matter.Engine ) {
+		super( x, y, ShapeType.Triangle, text, engine )
+		this.width = 250
+		this.height = 250
+
+		this.body = Matter.Bodies.fromVertices( x, y, [ [
+			{ x: x, y: y - this.height / 1.5 },
+			{ x: x + this.width / 1.5, y: y + this.height / 3 },
+			{ x: x - this.width / 1.5, y: y + this.height / 3 }
+		] ] )
+
+		Matter.World.add( engine.world, this.body )
 	}
 	override draw( ctx: CanvasRenderingContext2D ) {
-		ctx.fillStyle = "#ffffff"
+		const position = this.body.position
+		const angle = this.body.angle
+
+		ctx.fillStyle = "#000"
+
+		ctx.save()
 		
+		ctx.translate( position.x, position.y )
+		ctx.rotate( angle )
+		ctx.scale( 1 + this.scale * 0.25, 1 + this.scale * 0.25 )
+		ctx.translate( -position.x, -position.y )
+
 		ctx.beginPath()
-		ctx.moveTo( this.x, this.y - 250 / 2 )
-		ctx.lineTo( this.x + 250 / 2, this.y + 150 / 2 )
-		ctx.lineTo( this.x - 250 / 2, this.y + 150 / 2 )
+		ctx.moveTo( position.x, position.y - this.height / 1.5 )
+		ctx.lineTo( position.x + this.width / 1.5, position.y + this.height / 3 )
+		ctx.lineTo( position.x - this.width / 1.5, position.y + this.height / 3 )
 		ctx.closePath()
 
 		ctx.fill()
 
 		ctx.font = "30px telegraf-bold"
 
-		ctx.fillStyle = "#111"
+		ctx.fillStyle = "#fff"
 		ctx.textBaseline = "middle"
 		ctx.textAlign = "center"
 
@@ -155,21 +205,15 @@ export class Triangle extends Shape {
 		const gap = 45
 
 		for ( let i = 0; i < texts.length; i++ ) {
-			ctx.fillText( texts[ i ], this.x, this.y + i * gap - gap * ( texts.length - 1 ) / 2 )
-		}
-	}
-	override process( canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, delta: number, nodes: Node[] ) {
-		if ( ( Math.sqrt( Math.pow( this.targetX - this.x, 2 ) + Math.pow( this.targetY - this.y, 2 ) ) ) > 0.5 ) {
-			let dx = ( this.targetX - this.x ) / 100
-			let dy = ( this.targetY - this.y ) / 100
-			
-			this.x += dx * delta
-			this.y += dy * delta
+			ctx.fillText( texts[ i ], position.x, position.y + i * gap - gap * ( texts.length - 1 ) / 2 )
 		}
 
-		this.draw( ctx )
+		ctx.restore()
+
 	}
-	override pressed( x: number, y: number ) {
-		return x > this.x - 100 && x < this.x + 100 && y > this.y - 100 && y < this.y + 100
+	override process( canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, delta: number, nodes: Node[] ) {
+		this.scale = Math.min( Math.max( ( this.dragged ? 0.01 : -0.01 ) * delta + this.scale, 0 ), 1 )
+
+		this.draw( ctx )
 	}
 }

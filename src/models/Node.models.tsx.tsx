@@ -5,6 +5,6 @@ export class Node {
         this.x = x
         this.y = y
     }
-    draw( _ctx: CanvasRenderingContext2D ): void {}
+    draw( _ctx: CanvasRenderingContext2D, _delta: number ): void {}
     process( _canvas: HTMLCanvasElement, _ctx: CanvasRenderingContext2D, _delta: number, _nodes: Node[] ): void {}
 }

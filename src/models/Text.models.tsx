@@ -22,7 +22,7 @@ export class Text extends Node {
 		
 		ctx.fillText( this.text, this.x, this.y )
     }
-    override process( canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, delta: number, nodes: Node[] ) {
+    override process( canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, delta: number, node: Node[] ) {
         this.draw( ctx )
     }
 }
