@@ -4,8 +4,7 @@ import { useEffect, useRef, useState, Suspense } from 'react'
 
 import telegraphBold from "../assets/fonts/Telegraf_Bold.otf"
 
-// import * as THREE from "three"
-import { CuboidCollider, Physics, RapierRigidBody, RigidBody } from '@react-three/rapier'
+import { Physics, RapierRigidBody, RigidBody } from '@react-three/rapier'
 
 interface characterProps {
     text: string

@@ -1,5 +1,3 @@
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-
 export default function DesignIsCommunity() {
     return (
         <>
