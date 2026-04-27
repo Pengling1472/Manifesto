@@ -3,21 +3,40 @@ import Perlin from "./perlin.tsx"
 
 import Matter from "matter-js"
 
-const noise = new Perlin( 1 )
-
 export enum ShapeType {
 	Circle,
 	Square,
 	Triangle,
 }
 
+const noise = new Perlin( 1 )
+
 const rgb = ( r: number, g: number, b: number ) => {
 	return `rgb( ${r}, ${g}, ${b} )`
 }
 
+const linearGradient = ( colors: [ r: number, g: number, b: number, d: number ][], value: number ) => {
+	let rgb = [ 0, 0, 0 ]
+	
+	for ( let i = 1; i < colors.length; i++ ) {
+		const c1 = colors[ i - 1 ]
+		const c2 = colors[ i ]
+		
+		if ( value == c2[ 3 ] ) return c2.splice( 0, 3 )
+		
+		if ( c1[3] <= value && c2[3] > value ) {
+			for ( let j = 0; j < 3; j++ ) {
+				rgb[ j ] = ( ( c2[j] - c1[j] ) / ( c2[3] - c1[3] ) ) * ( value - c2[3] ) + c2[j]
+			}
+		}
+	}
+	
+	return rgb
+}
+
 export class Shape extends Node {
 	type: ShapeType
-	text: string
+	text: string	
 	targetX: number
 	targetY: number 
 	dx: number
@@ -128,13 +147,14 @@ export class Square extends Shape {
 
 		for ( let i = 0; i < this.width / 5; i++ ) {
 			for ( let j = 0; j < this.height / 5; j++ ) {
-				let noiseValue = noise.perlin3( i * 0.1, j * 0.05, this.noiseIncrement )
-				noiseValue = Math.floor( ( noiseValue + 1 ) / 2 * 255 )
+				let noiseValue = Math.max( Math.min( noise.perlin3( i * 0.025, j * 0.015, this.noiseIncrement ) * 3, 1 ), 0 )
+				let [ r, g, b ] = linearGradient( [ [ 209, 81, 36, 0 ], [ 39, 53, 60, 0.3 ], [ 39, 53, 60, 0.7 ], [ 244, 176, 42, 1 ] ], noiseValue )
 
-				ctx.fillStyle = rgb( noiseValue, 60, noiseValue )
+				ctx.fillStyle = rgb( r, g, b )
 				ctx.fillRect( position.x - this.width / 2 + i * 5, position.y - this.height / 2 + j * 5, 6, 6 )
 			}
 		}
+		
 		ctx.font = "30px telegraf-bold"
 
 		ctx.fillStyle = "#fff"
@@ -151,7 +171,7 @@ export class Square extends Shape {
 
 	}
 	override process( canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, delta: number, nodes: Node[] ) {
-		this.noiseIncrement += 0.005
+		this.noiseIncrement += 0.001
 		this.scale = Math.min( Math.max( ( this.dragged ? 0.01 : -0.01 ) * delta + this.scale, 0 ), 1 )
 
 		this.draw( ctx )

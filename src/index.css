@@ -15,13 +15,44 @@
 	/* -webkit-tap-highlight-color: transparent; */
 }
 
+.design-is-motion h1, .design-is-motion h2 {
+	color: #7981bf;
+}
+
+h2 {
+	font-family: 'telegraf-regular';
+	font-size: 3rem;
+	font-weight: 100;
+	margin: 4rem 0;
+
+	text-align: center;
+
+	width: 100%;
+
+	position: absolute;
+}
+
+h1 {
+	font-family: 'telegraf-bold';
+	font-size: 7.5rem;
+	margin: 0;
+
+	text-align: center;
+	display: flex;
+
+	justify-content: center;
+    align-items: center;
+
+	height: 100vh;
+	width: 100%;
+}
+
 body {
 	margin: 0;
 	background: #000;
 }
 
-.fun-canvas {
-	width: 100%;
-	/* image-rendering: pixelated; */
-	/* box-shadow: 0 4px 30px rgba( 0, 0, 0, 0.25 ); */
+canvas {
+	width: 100% !important;
+	height: 100% !important;
 }

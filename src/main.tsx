@@ -7,6 +7,7 @@ PAGES
 */
 
 import Home from './page/Home'
+import DesignIsMotion from './page/DesignIsMotion'
 
 /* 
 STYLES
@@ -23,8 +24,8 @@ ReactDOM.createRoot( document.getElementById( 'root' )! ).render(
 		<React.StrictMode>
 			<BrowserRouter>
 				<Routes>
-					<Route path="/" element={ <Home/> }/>
-					{/* <Route path="*" element={ <NotFound/> }/> */}
+					<Route path="/design-is-motion" element={ <DesignIsMotion/> }/>
+					<Route path="*" element={ <Home/> }/>
 				</Routes>
 			</BrowserRouter>
 		</React.StrictMode>
