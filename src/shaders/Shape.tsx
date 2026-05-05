@@ -1,4 +1,22 @@
-export default /* glsl */` 
+export function ShapeVertex() {
+return /* glsl */`
+varying vec3 vPosition;
+
+void main() {
+	vPosition = position;
+
+	// vec4 modelViewPosition = modelViewMatrix * vec4( position, 1.0 );
+	// vec4 projectedPosition = projectionMatrix * modeViewPosition;
+
+	// gl_Position = projectedPosition;
+
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4( position, 1.0 );
+}
+`
+}
+
+export function ShapeFragment() {
+return /* glsl */`
 #define PI 3.14159265358979
 #define MOD3 vec3(.1031,.11369,.13787)
 
@@ -74,10 +92,10 @@ void main() {
 		colors[ 1 ] = vec4( 0.0, 105.0, 119.0, 1.0 );
 	}
 
-
 	float noiseValue = clamp( pnoise( vec3( vPosition.x * 2.5, vPosition.y * 1.5, uTime * 0.2 ) ) * 5.0, 0.0, 1.0 );
 	vec3 gradient = linearGradient( colors, noiseValue );
 
 	gl_FragColor = vec4( gradient.xyz / vec3( 255.0 ), 1 );
 }
 `
+}

@@ -14,6 +14,8 @@ STYLES
 */
 
 import './index.css'
+import DesignIsCommunity from './page/DesignIsCommunity'
+import DesignIsPlay from './page/DesignIsPlay'
 
 /*
 PAGE SETUP
@@ -24,7 +26,9 @@ ReactDOM.createRoot( document.getElementById( 'root' )! ).render(
 		<React.StrictMode>
 			<BrowserRouter>
 				<Routes>
-					<Route path="/design-is-motion" element={ <DesignIsMotion/> }/>
+					<Route path="/play" element={ <DesignIsPlay/> }/>
+					<Route path="/community" element={ <DesignIsCommunity/> }/>
+					<Route path="/motion" element={ <DesignIsMotion/> }/>
 					<Route path="*" element={ <Home/> }/>
 				</Routes>
 			</BrowserRouter>

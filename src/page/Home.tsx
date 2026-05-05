@@ -1,22 +1,41 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useRef } from 'react'	
-import { Text, type TextProps } from "@react-three/drei" 
+import { Suspense, useEffect, useRef, useState } from 'react'	
+import { OrbitControls, Text, useCursor, type TextProps } from "@react-three/drei" 
 import { CuboidCollider, Physics, RapierRigidBody, RigidBody } from '@react-three/rapier'
 
 import telegraphRegular from "../assets/fonts/Telegraf_Regular.otf"
 import telegraphBold from "../assets/fonts/Telegraf_Bold.otf"
 
-import fragment from "../shaders/Fragment.tsx"
-import vertex from "../shaders/Vertex.tsx"
+import { ShapeFragment, ShapeVertex } from "../shaders/Shape.tsx"
 import type { ShaderMaterial } from 'three'
 
 import * as THREE from "three"
+import { useNavigate } from 'react-router-dom'
+
+enum PMCTypes {
+	Play,
+	Motion,
+	Community
+}
+
+interface shapeDataStructure {
+	id: number
+	type: PMCTypes
+	text: string
+	position: { x: number, y: number }
+	rotation: number
+	scale: number
+	isDragging: boolean
+}
 
 interface shapeProps {
 	id: number
 	text: string
 	position: { x: number, y: number }
 	rotation: number
+	scale: number
+	isDragging: boolean
+	onAction: ( id: number, node: RapierRigidBody ) => void
 }
 
 const square = new THREE.Shape()
@@ -31,49 +50,24 @@ const triangle = new THREE.Shape()
 const circle = new THREE.Shape()
 	.absarc( 0, 0, 1, 0, Math.PI * 2, false )
 
-function Shape( { id, text, position, rotation }: shapeProps ) {
+function Shape( { id, text, position, rotation, scale, onAction }: shapeProps ) {
 	const rigidBodyRef = useRef<RapierRigidBody>( null )
-	const meshRef = useRef<THREE.Mesh>( null )
-	const textRef = useRef<TextProps>( null )
 	const materialRef = useRef<ShaderMaterial>( null )
-	const isDraggingRef = useRef( false )
+	const meshRef = useRef<THREE.Mesh>( null )
 
-	useFrame( ( { mouse, viewport, clock } ) => {
-		const time = clock.getElapsedTime()
-
-		if ( meshRef.current && textRef.current ) {
-			const targetScale = isDraggingRef.current ? 3.5 : 3 
-
+	useFrame( ( { clock } ) => {
+		if ( meshRef.current ) {
 			meshRef.current.scale.lerp(
-				new THREE.Vector3( targetScale, targetScale, targetScale ),
+				new THREE.Vector3( scale, scale, 1 ),
 				0.05
 			)
 		}
-		if ( materialRef.current ) materialRef.current.uniforms.uTime.value = time
-		if ( rigidBodyRef.current && isDraggingRef.current ) {
-			const targetX = ( mouse.x * viewport.width ) / 2
-			const targetY = ( mouse.y * viewport.height ) / 2
+		if ( materialRef.current ) {
+			const time = clock.getElapsedTime()
 
-			const position = rigidBodyRef.current.translation()
-
-			const dx = ( targetX - position.x ) * 4
-			const dy = ( targetY - position.y ) * 4
-			
-			rigidBodyRef.current.setLinvel( { x: dx, y: dy, z: 0 }, true )
+			materialRef.current.uniforms.uTime.value = time
 		}
 	} )
-
-	useEffect( () => {
-		const handlePointerUp = () => {
-			if ( !isDraggingRef.current ) return
-
-			isDraggingRef.current = false
-		}
-
-		window.addEventListener( "pointerup", handlePointerUp )
-
-		return () => window.removeEventListener( "pointerup", handlePointerUp )
-	}, [] )
 
 	return (
 		<RigidBody
@@ -82,39 +76,44 @@ function Shape( { id, text, position, rotation }: shapeProps ) {
 			enabledRotations={ [ false, false, true ] }
 			linearDamping={ 3 }
 			angularDamping={ 2 }
-			position={ [ position.x, position.y, -2 ] }
+			position={ [ position.x, position.y, -3 ] }
 			rotation={ [ 0, 0, rotation ] }
-			colliders="hull">
-			<Text
-				ref={ textRef }
-				position={ [ 0, 0, 3.5 ] }
-				font={ telegraphBold }
-				fontSize={ 0.75 }
-				textAlign='center'>
-				{ text.replace( /\\n/g, '\n' ) }
-			</Text>
-			<mesh
+			colliders="hull"
+		>
+			<group
 				ref={ meshRef }
-				scale={ 3 }
-				onPointerDown={ () => {
-					isDraggingRef.current = true
-				} }>
-				{ id == 0 ?
-					<shapeGeometry args={ [ square ] }/> :
-					id == 1 ? <shapeGeometry args={ [ circle ] }/> :
-					<shapeGeometry args={ [ triangle ] }/>
-				}
-				<shaderMaterial
-					ref={ materialRef }
-					vertexShader={ vertex }
-					fragmentShader={ fragment }
-					uniforms={ { uTime: { value: 0 }, id: { value: id } } }
-				/>
-				<extrudeGeometry args={ [ id == 0 ?
-					square :
-					id == 1 ? circle :
-					triangle, { depth: 1, bevelEnabled: false } ] }/>
-			</mesh>
+			>
+				<Text
+					position={ [ 0, 0, 3 ] }
+					font={ telegraphBold }
+					fontSize={ 0.75 }
+					textAlign='center'>
+					{ text.replace( /\\n/g, '\n' ) }
+				</Text>
+				<mesh
+					scale={ 3 }
+					onPointerDown={ () => {
+						if ( rigidBodyRef.current ) onAction( id, rigidBodyRef.current )
+					} }
+				>
+					{ [
+						<shapeGeometry args={ [ square ] }/>,
+						<shapeGeometry args={ [ circle ] }/>,
+						<shapeGeometry args={ [ triangle ] } />
+					][ id % 3 ] }
+					<shaderMaterial
+						ref={ materialRef }
+						vertexShader={ ShapeVertex() }
+						fragmentShader={ ShapeFragment() }
+						uniforms={ { uTime: { value: 0 }, id: { value: id % 3 } } }
+					/>
+					<extrudeGeometry
+						args={
+							[ [ square, circle, triangle ][ id % 3 ], { depth: 1, bevelEnabled: false } ]
+						}
+					/>
+				</mesh>
+			</group>
 		</RigidBody>
 	)
 }
@@ -146,31 +145,234 @@ function Border() {
 	</> )
 }
 
+interface WrapperProps {}
+
+function Wrapper( { children }: React.PropsWithChildren<WrapperProps> ) {
+	// const { viewport } = useThree()
+
+	// const scale = viewport.width / 55
+
+	return ( <>
+		<group>
+			{ children }
+		</group>
+	</> )
+}
+
+function Scene() {
+	const promptCoordinates = useRef<number[][]>( [ [ -11.35, -12 ], [ 7.9, -12 ], [ 15.2, -12 ] ] )
+	const selectedNode = useRef<RapierRigidBody>( null )
+	const isDragging = useRef<boolean>( false )
+	const nodeID = useRef<number>( 0 )
+	const navigate = useNavigate()
+	const [ promptNodes, setPromptNodes ] = useState<( { id: number, node: RapierRigidBody } | null )[]>( [ null, null, null ] )
+	const [ shapes, setShapes ] = useState<shapeDataStructure[]>( [
+		{ id: 0, type: PMCTypes.Motion,    text: "Bringing\nit to Life", position: { x: -18,   y: -3.3  }, rotation: 0  , scale: 1, isDragging: false },
+		{ id: 1, type: PMCTypes.Motion,    text: "Rhythm",               position: { x: -8.9,  y: 2.36  }, rotation: 15 , scale: 1, isDragging: false },
+		{ id: 2, type: PMCTypes.Motion,    text: "Fluid",                position: { x: -14,   y: 8.1   }, rotation: 45 , scale: 1, isDragging: false },
+		{ id: 3, type: PMCTypes.Community, text: "Making\nChanges",      position: { x: 0.03,  y: 6.9   }, rotation: 15 , scale: 1, isDragging: false },
+		{ id: 4, type: PMCTypes.Community, text: "Diversity",            position: { x: 5.3,   y: -1.6  }, rotation: 0  , scale: 1, isDragging: false },
+		{ id: 5, type: PMCTypes.Community, text: "Colla-\nborative",     position: { x: -3.16, y: -4.43 }, rotation: -35, scale: 1, isDragging: false },
+		{ id: 6, type: PMCTypes.Play,      text: "Outside\nof the Grid", position: { x: 14.7,  y: -2.3  }, rotation: 15 , scale: 1, isDragging: false },
+		{ id: 7, type: PMCTypes.Play,      text: "Surprises",            position: { x: 17,    y: 6.43  }, rotation: -25, scale: 1, isDragging: false },
+		{ id: 8, type: PMCTypes.Play,      text: "Fearless",             position: { x: 9.29,  y: 9.6   }, rotation: -50, scale: 1, isDragging: false }
+	] )
+
+	const redirect = () => {
+		let choices = [ 0, 0, 0 ]
+
+		for ( const item of promptNodes ) if ( item ) {
+			const { id } = item
+
+			choices[ shapes[ id ].type ]++
+		}
+
+		const [ play, motion, community ] = choices
+
+		console.log( play, motion, community )
+
+		if ( play >= 1 ) return navigate( "/play" )
+		if ( motion >= 1 ) return navigate( "/motion" )
+		if ( community >= 1 ) return navigate( "/community" )
+
+		const random = Math.random()
+		
+		navigate( random >= ( 1 / 3 ) ? "/play" : random >= ( 1 / 3 * 2 ) ? "/motion" : "community" )
+	}
+
+	const onPointerDown = ( id: number, node: RapierRigidBody ) => {
+		if ( !isDragging.current ) {
+			selectedNode.current = node
+			isDragging.current = true
+			nodeID.current = id
+
+			setShapes( current => {
+				const newShapes = [ ...current ]
+
+				newShapes[ id ].scale = 1.1
+				newShapes[ id ].isDragging = true
+				
+				return newShapes
+			} )
+		}
+	}
+
+	const handlePointerUp = () => {
+		if ( selectedNode.current ) {
+			const position = selectedNode.current.translation()
+
+			for ( const [ index, [ x2, y2 ] ] of promptCoordinates.current.entries() ) {
+				if ( promptNodes[ index ] != null ) continue
+
+				const distance = Math.sqrt( ( x2 - position.x ) ** 2 + ( y2 - position.y ) ** 2 )
+				const node = selectedNode.current
+
+				if ( distance < 3 ) {
+					setPromptNodes( current => {
+						const newPromptNodes = [ ...current ]
+						
+						newPromptNodes[ index ] = { id: nodeID.current, node }
+						shapes[ nodeID.current ].scale = 0.5
+
+						return newPromptNodes
+					} )
+					setShapes( current => {
+						const newShapes = [ ...current ]
+
+						newShapes[ nodeID.current ].rotation = 0
+						newShapes[ nodeID.current ].scale = 0.5
+						newShapes[ nodeID.current ].isDragging = false
+
+						return newShapes
+					} )
+
+					selectedNode.current.setTranslation( { x: position.x, y: position.y, z: -10 }, true )
+
+					isDragging.current = false
+					selectedNode.current = null
+
+					setTimeout( () => {
+						if ( promptNodes.every( node => node != null ) ) redirect()
+					}, 1000 )
+
+					return
+				}
+			}
+			
+			selectedNode.current.setTranslation( { x: position.x, y: position.y, z: -3 }, true )
+
+			isDragging.current = false
+			selectedNode.current = null
+
+			setShapes( current => {
+				const newShapes = [ ...current ]
+
+				newShapes[ nodeID.current ].scale = 1
+				newShapes[ nodeID.current ].isDragging = false
+
+				return newShapes
+			} )
+		}
+	}
+
+	useFrame( ( { mouse, viewport } ) => {
+		for ( const [ index, item ] of promptNodes.entries() ) {
+			if ( item && shapes[ item.id ].isDragging ) promptNodes[ index ] = null 
+			if ( item && !shapes[ item.id ].isDragging ) {
+				const [ targetX, targetY ] = promptCoordinates.current[ index ]
+				const { node } = item
+
+				const position = node.translation()
+
+				const dx = ( targetX - position.x ) * 4
+				const dy = ( targetY - position.y ) * 4
+
+				node.setLinvel( { x: dx, y: dy, z: 0 }, true )
+				node.setRotation( { x: 0, y: 0, z: 0, w: 0 }, true )
+			}
+		}
+		if ( selectedNode.current ) {
+			const targetX = ( mouse.x * viewport.width ) / 2
+			const targetY = ( mouse.y * viewport.height ) / 2
+
+			const position = selectedNode.current.translation()
+
+			const dx = ( targetX - position.x ) * 4
+			const dy = ( targetY - position.y ) * 4
+			
+			selectedNode.current.setLinvel( { x: dx, y: dy, z: 0 }, true )
+			selectedNode.current.setTranslation( { x: position.x, y: position.y, z: -2 }, true )	
+		}
+	} )
+
+	useEffect( () => {
+		window.addEventListener( "pointerup", handlePointerUp )
+
+		return () => window.removeEventListener( "pointerup", handlePointerUp )
+	}, [ handlePointerUp ] )
+
+	return ( <>
+		<Physics gravity={ [ 0, 0, 0 ] }>
+			<Border/>
+			<Wrapper>
+				<Suspense fallback={ null }>
+					{ shapes.map( shape =>
+						<Shape 
+							id={ shape.id }
+							text={ shape.text }
+							position={ shape.position }
+							rotation={ Math.PI / 180 * shape.rotation }
+							scale={ shape.scale }
+							isDragging={ shape.isDragging }
+							onAction={ onPointerDown }
+						/>
+					) }
+					{/* <mesh
+						position={ [ -11.30, -12.25, -6 ] }
+						scale={ 1 }>
+						<shapeGeometry args={ [ triangle ] }/>
+						<shaderMaterial
+							vertexShader={ ShapeVertex() }
+							fragmentShader={ ShapeFragment() }
+							uniforms={ { uTime: { value: 0 }, id: { value: 2 } } }
+						/>
+						<extrudeGeometry args={ [ triangle, { depth: 1, bevelEnabled: false } ] }/>
+					</mesh> */}
+					<Text
+						position={ [ 0, -12, -3 ] }
+						font={ telegraphRegular }
+						fontSize={ 1.75 }
+						textAlign='center'>
+						As a [       ] designer, I create [       ] by [       ]
+					</Text>
+					<Text
+						position={ [ 0, -14, -3 ] }
+						font={ telegraphRegular }
+						fontSize={ 0.75 }
+						textAlign='center'>
+						P.S: You can't have them all
+					</Text>
+				</Suspense>
+			</Wrapper>
+		</Physics>
+	</> )
+}
+
 export default function Home() {
 	return ( <>
-		{/* <canvas ref={ canvasRef } className='fun-canvas'></canvas> */}
-		<Canvas orthographic camera={ { zoom: 35 } }>
+		<Canvas
+			id='canvas'
+			orthographic
+			camera={ { zoom: 35, near: -20 } } >
+			{/* <ambientLight intensity={ 10 }/> */}
 			{/* <OrbitControls/> */}
-			{/* <ambientLight intensity={ 10 }/>	 */}
-			<Physics gravity={ [ 0, 0, 0 ] }>
-				<Border/>
-				<Shape id={ 0 } text="Bringing\nit to Life" position={ { x: -18, y: -4.3 } } rotation={ 0 }/>
-				<Shape id={ 1 } text="Rhythm" position={ { x: -8.9, y: 1.36 } } rotation={ Math.PI / 180 * 15 }/>
-				<Shape id={ 2 } text="Fluid" position={ { x: -14, y: 7.1 } } rotation={ Math.PI / 180 * 45 }/>
-				<Shape id={ 0 } text="Making\nChanges" position={ { x: 0.03, y: 5.9 } } rotation={ Math.PI / 180 * 15 }/>
-				<Shape id={ 1 } text="Diversity" position={ { x: 5.3, y: -2.6 } } rotation={ 0 }/>
-				<Shape id={ 2 } text="Colla-\nborative" position={ { x: -3.16, y: -5.43 } } rotation={ Math.PI / 180 * -35 }/>
-				<Shape id={ 0 } text="Outside\nof the Grid" position={ { x: 14.7, y: -3.3 } } rotation={ Math.PI / 180 * 15 }/>
-				<Shape id={ 1 } text="Surprises" position={ { x: 17, y: 5.43 } } rotation={ Math.PI / 180 * -25 }/>
-				<Shape id={ 2 } text="Fearless" position={ { x: 9.29, y: 8.6 } } rotation={ Math.PI / 180 * -50 }/>
-			</Physics>
-			<Text
-				position={ [ 0, -12, 4 ] }
-				font={ telegraphRegular }
-				fontSize={ 1.75 }
-				textAlign='center'>
-				As a [   ] designer, I create [   ] by [   ]
-			</Text>
+			{/* <gridHelper args={ [ 40, 20 ] } rotation-x={ Math.PI / 2 }/> */}
+			<Scene/>
+			{/* <mesh
+				position={ [ 15.2, -12, 0 ] }
+			>
+				<boxGeometry args={ [ 1, 1, 1 ] }/>
+			</mesh> */}
 		</Canvas>
 	</> )
 }

@@ -1,133 +1,138 @@
-import { Text, useTexture } from '@react-three/drei'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { useEffect, useRef, useState, Suspense } from 'react'
+import { OrbitControls, Text, useTexture } from '@react-three/drei'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { useEffect, useRef, useState, Suspense, useMemo } from 'react'
 
 import telegraphBold from "../assets/fonts/Telegraf_Bold.otf"
 
 import { Physics, RapierRigidBody, RigidBody } from '@react-three/rapier'
+import blurBrush from "../assets/brushes/blur-brush.png"
+import motionBackground from '../assets/images/motion-background.png'
+
+import * as THREE from "three"
+
+import { DecalVertex, DecalFragment } from '../shaders/Decal'
+
+import trail1 from "../assets/motion/1-trail.png"
+import trail2 from "../assets/motion/2-trail.png"
+import trail3 from "../assets/motion/3-trail.png"
+import trail4 from "../assets/motion/4-trail.png"
+import trail5 from "../assets/motion/5-trail.png"
+import trail6 from "../assets/motion/6-trail.png"
+import trail7 from "../assets/motion/7-trail.png"
+import trail8 from "../assets/motion/8-trail.png"
 
 interface characterProps {
+    id: number
     text: string
     position: { x: number, y: number }
-    addParticle: ( position: { x: number, y: number } ) => void
+    onAction: ( id: number, node: RapierRigidBody ) => void
+}
+
+interface characterDataStructure {
+    id: number
+    text: string
+    position: { x: number, y: number }
+}
+
+interface decalProps {
+    isDrawing: boolean
 }
 
 interface particleProps {
-    position: { x: number, y: number }
     id: number
+    trailID: number
+    active: boolean
+    velocity: { x: number, y: number }
+    position: { x: number, y: number }
+    onAction: ( id: number ) => void
 }
 
-useTexture.preload( [
-    "/motion/1-trail.png",
-    "/motion/2-trail.png",
-    "/motion/3-trail.png",
-    "/motion/4-trail.png",
-    "/motion/5-trail.png",
-    "/motion/6-trail.png",
-    "/motion/7-trail.png",
-    "/motion/8-trail.png"
-] )
+interface particlesDataStructure {
+    id: number
+    trailID: number
+    active: boolean
+    velocity: { x: number, y: number }
+    position: { x: number, y: number }
+}
 
-function Particle( { position, id }: particleProps ) {
-    const trail = useTexture( `/motion/${id + 1}-trail.png` )
+function Particle( { id, trailID, active, velocity, position, onAction }: particleProps ) {
     const rigidBodyRef = useRef<RapierRigidBody>( null )
+    const materialRef = useRef<THREE.Material>( null )
+    const opacity = useRef<number>( 1 )
+    const [ isActive, setIsActive ] = useState( false )
+    const texture = useTexture( [ trail1, trail2, trail3, trail4, trail5, trail6, trail7, trail8 ][ trailID ] )
 
     useEffect( () => {
-        const timer = setTimeout( () => {
-            if ( rigidBodyRef.current ) {
-                // const randomX = (Math.random() - 0.5) * 10;
-                // const randomY = (Math.random() - 0.5) * 10;
+        if ( active && rigidBodyRef.current ) {
+            rigidBodyRef.current.setLinvel( { x: velocity.x, y: velocity.y, z: 0 }, true )   
+            rigidBodyRef.current.setTranslation( { x: position.x, y: position.y, z: 0 }, true )
+            
+            setTimeout( () => {
+                setIsActive( true )
+            }, 20 )
+        }
+        if ( !isActive && materialRef.current ) {
+            materialRef.current.opacity = opacity.current
+            
+            opacity.current = 1
+        }
+    }, [ active, isActive ] )
     
-                console.log( "spawned" )
-                rigidBodyRef.current.applyImpulse( { x: -10 + Math.floor( Math.random() * 20 ), y: 1 + Math.floor( Math.random() * 10 ), z: 0 }, true ) 
-                // rigidBodyRef.current.applyImpulse( { x: 0, y: 100, z: 0 }, true ) 
-            }
-        }, 20 )
+    useFrame( ( _, delta ) => {
+        if ( active && materialRef.current ) {
+            opacity.current = Math.max( opacity.current - delta * 0.8, 0 )
+            materialRef.current.opacity = opacity.current
+        }
+        if ( opacity.current == 0 && rigidBodyRef.current ) {
+            rigidBodyRef.current.sleep()
 
-        return () => clearTimeout( timer )
-    }, [] )
-
-    return ( <>
-        <RigidBody
-            ref={ rigidBodyRef }
-            enabledTranslations={ [ true, true, false ] }
-			enabledRotations={ [ false, false, true ] }
-            type='dynamic'
-            gravityScale={ 0 }
-            // linearVelocity={ [ 0, -30, 0 ] }
-            restitution={ 1 }
-            linearDamping={ 0 }
-            angularDamping={ 0 }
-            colliders="cuboid"
-            friction={ 1 }
-            >
-            <mesh
-                scale={ 4 }
-                position={ [ position.x, position.y, -1 ] }>
-                <boxGeometry args={ [ 1, 1, 0.01 ] }/>
-                <meshBasicMaterial
-                    transparent={ true }
-                    toneMapped={ false }
-                    map={ trail }
-                    color={ "white" }/>
-            </mesh>
-            {/* <CuboidCollider args={ [ 1, 1, 1 ] } sensor/> */}
-        </RigidBody>
-    </> )
-}
-
-function Character( { text, position, addParticle }: characterProps ) {
-    const rigidBodyRef = useRef<RapierRigidBody>( null )
-    const isDraggingRef = useRef<boolean>( false )
-    const timer = useRef<number>( 0 )
-
-    useFrame( ( { mouse, viewport }, delta ) => {
-        if ( rigidBodyRef.current && isDraggingRef.current ) {
-            
-            const targetX = ( mouse.x * viewport.width ) / 2
-            const targetY = ( mouse.y * viewport.height ) / 2
-
-            timer.current += delta
-
-            if ( timer.current > 0.25 ) {
-                timer.current = 0
-
-                console.log( "h" )
-                
-                // addParticle( <Particle position={ { x: targetX, y: targetY } }/> )
-                addParticle( { x: targetX, y: targetY } )
-            }
-            
-            rigidBodyRef.current.setTranslation( { x: targetX, y: targetY, z: 0 }, true )
+            onAction( id )
+            setIsActive( false )
         }
     } )
 
-    useEffect( () => {
-        const handlePointerUp = () => {
-            if ( !isDraggingRef.current ) return
+    return ( <RigidBody
+        ref={ rigidBodyRef }
+        type='dynamic'
+        linearDamping={ 5 }
+        angularDamping={ 2 }
+        sensor={ true }
+        position={ [ -20, -20, -1 ] }
+        includeInvisible
+    >
+        <mesh
+            visible={ isActive }
+            scale={ 3 }
+        >
+            <boxGeometry args={ [ 1, 1, 0.1 ] }/>
+            <meshBasicMaterial
+                ref={ materialRef }
+                transparent={ true }
+                toneMapped={ false }
+                map={ texture }
+            />
+        </mesh>
+    </RigidBody> ) 
+}
 
-            isDraggingRef.current = false
-        }
-
-        window.addEventListener( "pointerup", handlePointerUp )
-
-        return () => window.removeEventListener( "pointerup", handlePointerUp )
-    }, [] )
+function Character( { id, text, position, onAction }: characterProps ) {
+    const rigidBodyRef = useRef<RapierRigidBody>( null )
 
     return ( <>
         <RigidBody
             ref={ rigidBodyRef }
             enabledTranslations={ [ true, true, false ] }
 			enabledRotations={ [ false, false, true ] }
-			linearDamping={ 3 }
-			angularDamping={ 2 }
-            position={ [ position.x, position.y, 0 ] }>
+			linearDamping={ 20 }
+			angularDamping={ 15 }
+            position={ [ position.x, position.y, 1 ] }
+        >
             <Text
                 font={ telegraphBold }
                 fontSize={ 4 }
                 color="#7981bf"
                 onPointerDown={ () => {
-                    isDraggingRef.current = true
+                    if ( rigidBodyRef.current ) onAction( id, rigidBodyRef.current )
                 } }>
                 { text }
             </Text>
@@ -135,39 +140,209 @@ function Character( { text, position, addParticle }: characterProps ) {
     </> )
 }
 
-export default function DesignIsMotion() {
-    const [ particles, setParticles ] = useState<React.ReactNode[]>( [] )
+function DecalComponent( { isDrawing }: decalProps ) {
+    const { viewport } = useThree()
+    const backgroundTexture = useMemo( () => {
+        const canvas = document.createElement( "canvas" )
+        const ctx = canvas.getContext( "2d" ) as CanvasRenderingContext2D
+        const background = new Image()
 
-    const addParticle = ( { x, y }: { x: number, y: number }, id: number ) => {
-        setParticles( [ ...particles, <Particle position={ { x, y } } id={ id }/> ] )
+        background.src = motionBackground
+
+        canvas.width = viewport.width * 40
+        canvas.height = viewport.height * 40
+
+        ctx.drawImage( background, canvas.width / 2 - 1920 / 2, canvas.height / 2 - 1080 / 2, 1920, 1080 )
+        
+        return new THREE.CanvasTexture( canvas )
+    }, [] )
+    // const backgroundTexture = useTexture( motionBackground )
+    const brush = useMemo( () => {
+        const brush = new Image()
+
+        brush.src = blurBrush
+
+        return brush
+    }, [] )
+    const canvas = useMemo( () => {
+        const canvas = document.createElement( "canvas" )
+        const ctx = canvas.getContext( "2d" ) as CanvasRenderingContext2D
+
+        canvas.width = viewport.width * 40
+        canvas.height = viewport.height * 40
+
+        ctx.fillStyle = "black"
+        ctx.fillRect( 0, 0, viewport.width * 40, viewport.height * 40 )
+        
+        return canvas
+    }, [] )
+    const texture = useMemo( () => new THREE.CanvasTexture( canvas ), [ canvas ] )
+
+    useFrame( ( { mouse } ) => {
+        const ctx = canvas.getContext( "2d" )
+
+        if ( ctx && isDrawing ) {
+            const targetX = mouse.x * viewport.width * 40 / 2
+			const targetY = mouse.y * viewport.height * 40 / 2
+
+            ctx.drawImage( brush, targetX + viewport.width / 2 * 40 - 200 / 2, -targetY + viewport.height / 2 * 40 - 200 / 2, 200, 200 )
+
+            texture.needsUpdate = true
+        }
+    } )
+
+    return ( <>
+        <mesh
+            position={ [ 0, 0, -2 ] }
+        >
+            <shaderMaterial
+                vertexShader={ DecalVertex() }
+                fragmentShader={ DecalFragment() }
+                uniforms={ { uTexture: { value: texture }, uBackground: { value: backgroundTexture } } }
+            />
+            <boxGeometry args={ [ viewport.width, viewport.height, 1 ] }/>
+        </mesh>
+    </> )
+}
+
+function Scene() {
+    const time = useRef<number>( 0 )
+    const nodeID = useRef<number>( 0 )
+    const selectedNode = useRef<RapierRigidBody>( null )
+    const [ isDrawing, setIsDrawing ] = useState<boolean>( false )
+    const [ particles, setParticles ] = useState<particlesDataStructure[]>(
+        new Array( 50 ).fill( null ).map( ( _, index ) => ( { id: index, trailID: index % 8, active: false, velocity: { x: 0, y: 0 }, position: { x: 0, y: 0 } } ) )
+    )
+    const [ characters ] = useState<characterDataStructure[]>( [
+        { id: 0, text: 'D', position: { x:-18.7, y: 0 } },
+        { id: 1, text: 'E', position: { x:-16, y: 0 } },
+        { id: 0, text: 'S', position: { x:-13.5, y: 0 } },
+        { id: 1, text: 'I', position: { x:-11.2, y: 0 } },
+        { id: 2, text: 'G', position: { x:-8.7, y: 0 } },
+        { id: 3, text: 'N', position: { x:-5.7, y: 0 } },
+        { id: 2, text: 'I', position: { x:-2, y: 0 } },
+        { id: 3, text: 'S', position: { x:0.3, y: 0 } },
+        { id: 4, text: 'M', position: { x:4.6, y: 0 } },
+        { id: 5, text: 'O', position: { x:8.1, y: 0 } },
+        { id: 4, text: 'T', position: { x:10.8, y: 0 } },
+        { id: 5, text: 'I', position: { x:13.1, y: 0 } },
+        { id: 6, text: 'O', position: { x:15.5, y: 0 } },
+        { id: 7, text: 'N', position: { x:18.6, y: 0 } }
+    ] )
+
+    const onPointerDown = ( id: number, node: RapierRigidBody ) => {
+        if ( !selectedNode.current ) {
+            selectedNode.current = node
+            nodeID.current = id
+
+            setIsDrawing( true )
+        }
     }
 
+    const disableParticle = ( id: number ) => {
+        setParticles( current => {
+            const newParticles = [ ...current ]
+
+            newParticles[ id ].active = false
+
+            return newParticles
+        } )
+    }
+
+    useEffect( () => {
+        const handlePointerUp = () => {
+            selectedNode.current = null
+            time.current = 0
+
+            setIsDrawing( false )
+        }
+
+        window.addEventListener( "pointerup", handlePointerUp )
+
+        return () => window.removeEventListener( "pointerup", handlePointerUp )
+    }, [] )
+
+    useFrame( ( { mouse, viewport }, delta ) => {
+        time.current += delta
+
+        if ( time.current > 0.025 && selectedNode.current ) {
+            time.current = 0
+
+            const index = particles.findIndex( particle => !particle.active )
+            const nodeVelocity = selectedNode.current.linvel()
+
+            if ( index > -1 && ( Math.abs( nodeVelocity.x ) >= 0.1 || Math.abs( nodeVelocity.y ) >= 0.1 ) ) {
+                const nodePosition = selectedNode.current.translation()
+
+                nodeVelocity.x = Math.min( Math.max( -nodeVelocity.x, -3 ), 3 )
+                nodeVelocity.y = Math.min( Math.max( -nodeVelocity.y, -3 ), 3 )
+                
+                setParticles( current => {
+                    const newParticles = [ ...current ] 
+                    
+                    newParticles[ index ].position = { x: nodePosition.x, y: nodePosition.y }
+                    newParticles[ index ].velocity = { x: nodeVelocity.x, y: nodeVelocity.y }
+                    newParticles[ index ].trailID = nodeID.current
+                    newParticles[ index ].active = true
+
+                    return newParticles
+                } )
+            }
+        }
+
+        if ( selectedNode.current ) {
+            const targetX = ( mouse.x * viewport.width ) / 2
+            const targetY = ( mouse.y * viewport.height ) / 2
+
+            const position = selectedNode.current.translation()
+
+			const dx = ( targetX - position.x ) * 20
+			const dy = ( targetY - position.y ) * 20
+			
+			selectedNode.current.setLinvel( { x: dx, y: dy, z: 0 }, true )
+        }
+    } )
+
+    return ( <>
+        <Physics gravity={ [ 0, 0, 0 ] }>
+            <Suspense fallback={ null }>
+                {
+                    characters.map( character => (
+                        <Character
+                            id={ character.id }
+                            text={ character.text }
+                            position={ character.position }
+                            onAction={ onPointerDown }
+                        />
+                    ) )
+                }
+                {
+                    particles.map( particle => (
+                        <Particle
+                            id={ particle.id }
+                            trailID={ particle.trailID }
+                            active={ particle.active }
+                            velocity={ particle.velocity }
+                            position={ particle.position }
+                            onAction={ disableParticle }
+                        />
+                    ) )
+                }
+            </Suspense>
+        </Physics>
+        <DecalComponent isDrawing={ isDrawing }/>
+    </> )
+}
+
+export default function DesignIsMotion() {
     return (
-        <article className='design-is-motion'>
-            <h2>As a [  ] designer, I create [  ] by [  ]</h2>
-            <h1>Design is Motion</h1>
-            <Canvas orthographic camera={ { zoom: 35 } }>
-                {/* <ambientLight intensity={ 10 }/> */}
-                <Physics gravity={ [ 0, 0, 0 ] }>
-                    <Character text='D' position={ { x: -12, y: 6.5 } } addParticle={ ( position ) => addParticle( position, 0 ) }/>
-                    <Character text='e' position={ { x: -9, y: 8.5 } } addParticle={ ( position ) => addParticle( position, 1 ) }/>
-                    <Character text='s' position={ { x: -6, y: 7.5 } } addParticle={ ( position ) => addParticle( position, 0 ) }/>
-                    <Character text='i' position={ { x: -3, y: 8 } } addParticle={ ( position ) => addParticle( position, 1 ) }/>
-                    <Character text='g' position={ { x: 0, y: 5 } } addParticle={ ( position ) => addParticle( position, 2 ) }/>
-                    <Character text='n' position={ { x: 3, y: 5.5 } } addParticle={ ( position ) => addParticle( position, 3 ) }/>
-                    <Character text='i' position={ { x: -18, y: -2.5 } } addParticle={ ( position ) => addParticle( position, 2 ) }/>
-                    <Character text='s' position={ { x: -15, y: -4 } } addParticle={ ( position ) => addParticle( position, 3 ) }/>
-                    <Character text='M' position={ { x: 0, y: -2.5 } } addParticle={ ( position ) => addParticle( position, 4 ) }/>
-                    <Character text='o' position={ { x: 3.5, y: -1 } } addParticle={ ( position ) => addParticle( position, 5 ) }/>
-                    <Character text='t' position={ { x: 6, y: -1.5 } } addParticle={ ( position ) => addParticle( position, 4 ) }/>
-                    <Character text='i' position={ { x: 8.75, y: -1.5 } } addParticle={ ( position ) => addParticle( position, 5 ) }/>
-                    <Character text='o' position={ { x: 11.5, y: -4.5 } } addParticle={ ( position ) => addParticle( position, 6 ) }/>
-                    <Character text='n' position={ { x: 15, y: -4.5 } } addParticle={ ( position ) => addParticle( position, 7 ) }/>
-                    <Suspense fallback={ null }>
-                        { particles }
-                    </Suspense>
-                </Physics>
+        <section className='design-is-motion'>
+            <Canvas id='canvas' orthographic camera={ { zoom: 35, near: -20 } } dpr={ 1 }>
+                {/* <OrbitControls/> */}
+                {/* <gridHelper args={ [ 40, 20 ] } rotation-x={ Math.PI / 2 }/> */}
+                <ambientLight intensity={ 10 }/>
+                <Scene/>
             </Canvas>
-        </article>
+        </section>
     )
 }
