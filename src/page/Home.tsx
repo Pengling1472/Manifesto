@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useRef, useState } from 'react'	
-import { OrbitControls, Text, useCursor, type TextProps } from "@react-three/drei" 
+import { Text } from "@react-three/drei" 
 import { CuboidCollider, Physics, RapierRigidBody, RigidBody } from '@react-three/rapier'
 
 import telegraphRegular from "../assets/fonts/Telegraf_Regular.otf"
@@ -234,6 +234,8 @@ function Scene() {
 						newPromptNodes[ index ] = { id: nodeID.current, node }
 						shapes[ nodeID.current ].scale = 0.5
 
+						if ( newPromptNodes.every( node => node != null ) ) redirect()
+
 						return newPromptNodes
 					} )
 					setShapes( current => {
@@ -250,10 +252,6 @@ function Scene() {
 
 					isDragging.current = false
 					selectedNode.current = null
-
-					setTimeout( () => {
-						if ( promptNodes.every( node => node != null ) ) redirect()
-					}, 1000 )
 
 					return
 				}

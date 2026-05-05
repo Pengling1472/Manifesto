@@ -1,4 +1,4 @@
-import { OrbitControls, Text, useTexture } from '@react-three/drei'
+import { Text, useTexture } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState, Suspense, useMemo } from 'react'
 
