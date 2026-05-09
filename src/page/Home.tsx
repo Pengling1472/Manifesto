@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useRef, useState } from 'react'	
-import { OrbitControls, Text, useTexture } from "@react-three/drei" 
+import { Text, useTexture } from "@react-three/drei" 
 import { CuboidCollider, Physics, RapierRigidBody, RigidBody } from '@react-three/rapier'
 
 import telegraphRegular from "../assets/fonts/Telegraf_Regular.otf"
