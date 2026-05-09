@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 367.62 393.68">
+  <defs>
+    <style>
+      .cls-1 {
+        opacity: .45;
+        stroke-width: .75px;
+      }
+
+      .cls-1, .cls-2 {
+        fill: none;
+        stroke: #f7e0a8;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-2 {
+        stroke-width: 1.1px;
+      }
+    </style>
+  </defs>
+  <g id="Shooting_stars">
+    <circle class="cls-2" cx="4.3" cy="389.39" r="3.75"/>
+    <line class="cls-1" x1="367.34" y1=".26" x2="20.34" y2="371.26"/>
+  </g>
+</svg>

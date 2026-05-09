@@ -130,7 +130,7 @@ function Character( { id, text, position, onAction }: characterProps ) {
             <Text
                 font={ telegraphBold }
                 fontSize={ 4 }
-                color="#7981bf"
+                color="white"
                 onPointerDown={ () => {
                     if ( rigidBodyRef.current ) onAction( id, rigidBodyRef.current )
                 } }>
@@ -142,21 +142,21 @@ function Character( { id, text, position, onAction }: characterProps ) {
 
 function DecalComponent( { isDrawing }: decalProps ) {
     const { viewport } = useThree()
-    const backgroundTexture = useMemo( () => {
-        const canvas = document.createElement( "canvas" )
-        const ctx = canvas.getContext( "2d" ) as CanvasRenderingContext2D
-        const background = new Image()
+    const backgroundTexture = useTexture( motionBackground )
+    // const backgroundTexture = useMemo( () => {
+    //     const canvas = document.createElement( "canvas" )
+    //     const ctx = canvas.getContext( "2d" ) as CanvasRenderingContext2D
+    //     const background = motionTexture.image as HTMLImageElement
 
-        background.src = motionBackground
+    //     canvas.width = viewport.width * 40
+    //     canvas.height = viewport.height * 40
 
-        canvas.width = viewport.width * 40
-        canvas.height = viewport.height * 40
+    //     console.log( canvas.width, canvas.height )
 
-        ctx.drawImage( background, canvas.width / 2 - 1920 / 2, canvas.height / 2 - 1080 / 2, 1920, 1080 )
+    //     ctx.drawImage( background, canvas.width / 2 - 1920 / 2, canvas.height / 2 - 1080 / 2, 1920, 1080 )
         
-        return new THREE.CanvasTexture( canvas )
-    }, [] )
-    // const backgroundTexture = useTexture( motionBackground )
+    //     return new THREE.CanvasTexture( canvas )
+    // }, [ motionTexture, viewport ] )
     const brush = useMemo( () => {
         const brush = new Image()
 
@@ -185,7 +185,7 @@ function DecalComponent( { isDrawing }: decalProps ) {
             const targetX = mouse.x * viewport.width * 40 / 2
 			const targetY = mouse.y * viewport.height * 40 / 2
 
-            ctx.drawImage( brush, targetX + viewport.width / 2 * 40 - 200 / 2, -targetY + viewport.height / 2 * 40 - 200 / 2, 200, 200 )
+            ctx.drawImage( brush, targetX + viewport.width / 2 * 40 - 300 / 2, -targetY + viewport.height / 2 * 40 - 300 / 2, 300, 300 )
 
             texture.needsUpdate = true
         }
@@ -200,6 +200,11 @@ function DecalComponent( { isDrawing }: decalProps ) {
                 fragmentShader={ DecalFragment() }
                 uniforms={ { uTexture: { value: texture }, uBackground: { value: backgroundTexture } } }
             />
+            {/* <Suspense fallback={ null }>
+            </Suspense> */}
+            {/* <meshBasicMaterial
+                color={ "blue" }
+            /> */}
             <boxGeometry args={ [ viewport.width, viewport.height, 1 ] }/>
         </mesh>
     </> )
@@ -211,7 +216,7 @@ function Scene() {
     const selectedNode = useRef<RapierRigidBody>( null )
     const [ isDrawing, setIsDrawing ] = useState<boolean>( false )
     const [ particles, setParticles ] = useState<particlesDataStructure[]>(
-        new Array( 50 ).fill( null ).map( ( _, index ) => ( { id: index, trailID: index % 8, active: false, velocity: { x: 0, y: 0 }, position: { x: 0, y: 0 } } ) )
+        new Array( 60 ).fill( null ).map( ( _, index ) => ( { id: index, trailID: index % 8, active: false, velocity: { x: 0, y: 0 }, position: { x: 0, y: 0 } } ) )
     )
     const [ characters ] = useState<characterDataStructure[]>( [
         { id: 0, text: 'D', position: { x:-18.7, y: 0 } },
@@ -239,6 +244,13 @@ function Scene() {
         }
     }
 
+    const handlePointerUp = () => {
+        selectedNode.current = null
+        time.current = 0
+
+        setIsDrawing( false )
+    }
+
     const disableParticle = ( id: number ) => {
         setParticles( current => {
             const newParticles = [ ...current ]
@@ -250,13 +262,6 @@ function Scene() {
     }
 
     useEffect( () => {
-        const handlePointerUp = () => {
-            selectedNode.current = null
-            time.current = 0
-
-            setIsDrawing( false )
-        }
-
         window.addEventListener( "pointerup", handlePointerUp )
 
         return () => window.removeEventListener( "pointerup", handlePointerUp )
@@ -265,7 +270,7 @@ function Scene() {
     useFrame( ( { mouse, viewport }, delta ) => {
         time.current += delta
 
-        if ( time.current > 0.025 && selectedNode.current ) {
+        if ( time.current > 0.02 && selectedNode.current ) {
             time.current = 0
 
             const index = particles.findIndex( particle => !particle.active )
@@ -328,16 +333,16 @@ function Scene() {
                         />
                     ) )
                 }
+                <DecalComponent isDrawing={ isDrawing }/>
             </Suspense>
         </Physics>
-        <DecalComponent isDrawing={ isDrawing }/>
     </> )
 }
 
 export default function DesignIsMotion() {
     return (
         <section className='design-is-motion'>
-            <Canvas id='canvas' orthographic camera={ { zoom: 35, near: -20 } } dpr={ 1 }>
+            <Canvas id='canvas' orthographic camera={ { zoom: 25, near: -20 } } dpr={ 1 }>
                 {/* <OrbitControls/> */}
                 {/* <gridHelper args={ [ 40, 20 ] } rotation-x={ Math.PI / 2 }/> */}
                 <ambientLight intensity={ 10 }/>

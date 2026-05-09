@@ -19,6 +19,7 @@ return /* glsl */`
 precision mediump float;
 
 uniform float uTime;
+uniform vec3 uColor;
 
 varying vec2 vUv;
 
@@ -27,12 +28,12 @@ void main() {
     float dist = distance( vUv, center );
     float brightness = sin( uTime );
 
-    brightness = ( brightness + 1.0 ) / 2.0;
+    brightness = 0.25 + ( brightness + 1.0 ) / 2.0 * 0.75;
 
     float shape = 1.0 - smoothstep( 0.1, 0.5, dist );
     float glow = shape * brightness;
 
-	gl_FragColor = vec4( 1.0, 1.0, 1.0, glow );
+	gl_FragColor = vec4( uColor.rgb, glow );
 }
 `
 }

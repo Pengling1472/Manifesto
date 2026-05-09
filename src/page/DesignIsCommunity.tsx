@@ -1,31 +1,44 @@
-import { Text } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useRef, useState } from "react";
+import { OrbitControls, useTexture } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useState } from "react";
 
-import telegraphBold from "../assets/fonts/Telegraf_Bold.otf" 
+import background from "../assets/images/background.webp"
 
 interface letterDataStructure {
-    letter: string
+    texturePath: string
     position: { x: number, y: number, z: number }
-    rotation: number
+}
+
+interface letterProps {
+    texturePath: string
+    position: { x: number, y: number, z: number }
+}
+
+function Letter( { texturePath, position }: letterProps ) {
+    const texture = useTexture( texturePath )
+
+    return ( <mesh
+        position={ [ position.x, position.y, position.z ] }
+        scale={ [ 4, 4, 4 ] }
+    >
+        <planeGeometry/>
+        <meshBasicMaterial
+            map={ texture }
+            transparent
+        />
+    </mesh> )
 }
 
 function Scene() {
-    // const letterPNGs: Record<string, string> = import.meta.glob( "../assets/community/*.png", { query: '?raw', eager: true } )
-    const characters = useRef<string[]>( "abcdefghijklmnopqrstuvwxyzabcdefg".split( "" ) )
+    const { viewport } = useThree()
+
+    const communityTexture = useTexture( background )
     const [ letters, setLetters ] = useState<letterDataStructure[]>(
-        new Array( 33 ).fill( null ).map( ( _, index ) => {
-            // const x = 5 * Math.cos( 2 * Math.PI * index / 33 )
-            // const z = 5 * Math.sin( 2 * Math.PI * index / 33 )
-
-            // console.log( letterPNGs )
-
-            return {
-                letter: characters.current[ index ],
-                position: { x: 0, y: 0, z: 0 },
-                rotation: 0
-            }
-        } )
+        new Array( 33 ).fill( null ).map( ( _, index ) => ( {
+            texturePath: `/src/assets/community/slice${ index + 1 }.png`,
+            position: { x: 0, y: 0, z: 0 },
+            rotation: 0
+        } ) )
     ) 
 
     useFrame( ( { clock } ) => {
@@ -45,36 +58,29 @@ function Scene() {
     } )
 
     return ( <>
-        {/* <gridHelper args={ [ 20, 20 ] }/> */}
-        {/* <OrbitControls/> */}
+        <OrbitControls/>
         { letters.map( ( letter, index ) => (
-            <mesh
+            <Letter
                 key={ index }
-                position={ [ letter.position.x, letter.position.y, letter.position.z ] }
-            >
-                {/* <boxGeometry
-                    args={ [ 1, 1, 1 ] }
-                /> */}
-                <Text
-                    font={ telegraphBold }
-                >
-                    { letter.letter }
-                </Text>
-                <meshBasicMaterial
-                    color={ "blue" }
-                />
-            </mesh>
+                texturePath={ letter.texturePath }
+                position={ letter.position }
+            />
         ) ) }
+        <mesh
+            position={ [ 0, 0, -10 ] }
+        >
+            <planeGeometry
+                args={ [ viewport.width, viewport.height ] }
+            />
+            <meshBasicMaterial
+                map={ communityTexture }
+            />
+        </mesh>
     </> )
 }
 
 export default function DesignIsCommunity() {
-    return (
-        <>
-            {/* <h1>Design Is Community</h1> */}
-            <Canvas id="canvas" camera={ { position: [ 0, 0, 10 ] } }>
-                <Scene/>
-            </Canvas>
-        </>
-    )
+    return ( <Canvas id="canvas" orthographic camera={ { zoom: 100, position: [ 0, 0, 10 ] } }>
+        <Scene/>
+    </Canvas> )
 }

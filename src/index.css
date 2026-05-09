@@ -57,6 +57,7 @@ body {
 	height: 100vh !important;
 	/* display: flex; */
 	width: 100%;
+	/* cursor: none; */
 	/* height: 100vh; */
 	/* aspect-ratio: 16 / 9; */
 }

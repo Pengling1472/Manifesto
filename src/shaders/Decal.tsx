@@ -47,6 +47,7 @@ void main() {
     colors[ 1 ] = vec4( background.r, background.g, background.b, 1.0 );
     
     if ( canvas.r > 0.0 ) gl_FragColor = vec4( linearGradient( colors, canvas.r ), 1.0 );
+	// gl_FragColor = vec4( background.rgb, 1.0 );
 }
 `
 }
