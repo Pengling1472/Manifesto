@@ -171,7 +171,7 @@ function Scene() {
     const lightScale = useRef<number[]>( new Array( 26 ).fill( 0 ) )
     const [ stars, setStars ] = useState<sparkleDataStructure[]>( () =>
         new Array( 26 ).fill( null ).map( ( _, index ) => ( {
-            texturePath: new URL( `/src/assets/play/${ index + 1 }.svg`, import.meta.url ).href,
+            texturePath: new URL( `../assets/play/${ index + 1 }.svg`, import.meta.url ).href,
             ...starsData[ index ]
         } ) )
     )
