@@ -12,7 +12,9 @@ import type { ShaderMaterial } from 'three'
 import * as THREE from "three"
 import { useNavigate } from 'react-router-dom'
 
-import background from "../assets/images/background.webp"
+import background from "../assets/images/background.png"
+import pointer from "../assets/images/pointer.png"
+import cursor from "../assets/images/cursor.png"
 
 enum PMCTypes {
 	Play,
@@ -147,9 +149,15 @@ function Border() {
 	</> )
 }
 
+useTexture.preload( [ cursor, pointer, background ] )
+
 function Scene() {
 	const { viewport } = useThree()
 	const backgroundTexture = useTexture( background )
+
+	const textures = useTexture( [ cursor, pointer ] )
+	const cursorRef = useRef<THREE.Mesh>( null )
+	const [ hovered, setHovered ] = useState( false )
 
 	const promptCoordinates = useRef<number[][]>( [ [ -11.55, -12 ], [ 7.8, -12 ], [ 15.2, -12 ] ] )
 	const selectedNode = useRef<RapierRigidBody>( null )
@@ -197,9 +205,10 @@ function Scene() {
 			selectedNode.current = node
 			isDragging.current = true
 			nodeID.current = id
-
+			
 			selectedNode.current.setEnabledRotations( false, false, true, true )
-
+			
+			setHovered( true )
 			setShapes( current => {
 				const newShapes = [ ...current ]
 
@@ -222,6 +231,7 @@ function Scene() {
 				const node = selectedNode.current
 
 				if ( distance < 3 ) {
+					setHovered( false )
 					setShapes( current => {
 						const newShapes = [ ...current ]
 
@@ -251,6 +261,7 @@ function Scene() {
 			isDragging.current = false
 			selectedNode.current = null
 
+			setHovered( false )
 			setShapes( current => {
 				const newShapes = [ ...current ]
 
@@ -291,6 +302,12 @@ function Scene() {
 			
 			selectedNode.current.setLinvel( { x: dx, y: dy, z: 0 }, true )
 			selectedNode.current.setTranslation( { x: position.x, y: position.y, z: -2 }, true )	
+		}
+		if ( cursorRef.current ) {
+			const targetX = ( mouse.x * viewport.width ) / 2
+			const targetY = ( mouse.y * viewport.height ) / 2
+
+			cursorRef.current.position.set( targetX, targetY, 10 )
 		}
 	} )
 
@@ -353,7 +370,24 @@ function Scene() {
 				</Text>
 				<mesh position={ [ 0, 0, -10 ] }>
 					<planeGeometry args={ [ viewport.width, viewport.height ] }/>
-					<meshBasicMaterial map={ backgroundTexture }/>
+					<meshBasicMaterial map={ backgroundTexture } toneMapped={ false } onUpdate={ () => {
+						backgroundTexture.colorSpace = THREE.SRGBColorSpace
+						backgroundTexture.needsUpdate = true
+					} }/>
+				</mesh>
+				<mesh ref={ cursorRef } scale={ 3 }>
+					<planeGeometry/>
+					<meshBasicMaterial
+						map={ textures[ hovered ? 1 : 0 ] }
+						transparent
+						toneMapped={ false }
+						onUpdate={ () => {
+							textures.forEach( texture => {
+								texture.colorSpace = THREE.SRGBColorSpace
+								texture.needsUpdate = true
+							} )
+						} }
+					/>
 				</mesh>
 			</Suspense>
 		</Physics>
@@ -365,7 +399,8 @@ export default function Home() {
 		<Canvas
 			id='canvas'
 			orthographic
-			camera={ { zoom: 30, near: -20 } } >
+			camera={ { zoom: 30, near: -20 } }
+		>
 			{/* <ambientLight intensity={ 10 }/> */}
 			{/* <OrbitControls/> */}
 			{/* <gridHelper args={ [ 40, 20 ] } rotation-x={ Math.PI / 2 }/> */}

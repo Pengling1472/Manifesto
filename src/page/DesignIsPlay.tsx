@@ -5,7 +5,7 @@ import { TwinkleVertex, TwinkleFragment } from "../shaders/Twinkle"
 import { Suspense, useEffect, useRef, useState } from "react"
 import type { Mesh, ShaderMaterial } from "three"
 
-import background from "../assets/images/background.webp"
+import background from "../assets/images/background.png"
 import shootingStar from "../assets/images/shooting-star.png"
 
 enum starColors {
@@ -70,11 +70,11 @@ interface shootingStarProps {
     startTime: number
 }
 
-function ShootingStar( { startingPosition, startTime }: shootingStarProps ) {
+export function ShootingStar( { startingPosition, startTime }: shootingStarProps ) {
     const texture = useTexture( shootingStar )
     const meshRef = useRef<Mesh>( null )
     const time = useRef<number>( startTime )
-    const speed = useRef<number>( 0.5 )
+    const speed = useRef<number>( 0.3 )
     const targetPosition = useRef<{ x: number, y: number }>( { x: 20, y: 20 } )
 
     useFrame( ( _, delta ) => {
@@ -103,6 +103,7 @@ function ShootingStar( { startingPosition, startTime }: shootingStarProps ) {
         />
         <meshBasicMaterial
             map={ texture }
+            toneMapped={ false }
             opacity={ 1 - time.current }
             transparent
         />
@@ -233,6 +234,7 @@ function Scene() {
             <planeGeometry args={ [ viewport.width, viewport.height ] }/>
             <meshBasicMaterial
                 map={ playTexture }
+                toneMapped={ false }
             />
         </mesh>
         <ShootingStar
