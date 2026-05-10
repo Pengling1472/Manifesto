@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber"
 
 import { TwinkleVertex, TwinkleFragment } from "../shaders/Twinkle"
 import { Suspense, useEffect, useRef, useState } from "react"
-import type { Mesh, ShaderMaterial } from "three"
+import { SRGBColorSpace, type Mesh, type ShaderMaterial } from "three"
 
 import background from "../assets/images/background.png"
 import shootingStar from "../assets/images/shooting-star.png"
@@ -167,7 +167,7 @@ function Scene() {
 
     const meshRef = useRef<Mesh>( null )
     const indexRef = useRef<number>( null )
-    const playTexture = useTexture( background )
+    const backgroundTexture = useTexture( background )
     const lightScale = useRef<number[]>( new Array( 26 ).fill( 0 ) )
     const [ stars, setStars ] = useState<sparkleDataStructure[]>( () =>
         new Array( 26 ).fill( null ).map( ( _, index ) => ( {
@@ -233,8 +233,12 @@ function Scene() {
         <mesh position={ [ 0, 0, -1 ] }>
             <planeGeometry args={ [ viewport.width, viewport.height ] }/>
             <meshBasicMaterial
-                map={ playTexture }
+                map={ backgroundTexture }
                 toneMapped={ false }
+                onUpdate={ () => {
+                    backgroundTexture.colorSpace = SRGBColorSpace
+                    backgroundTexture.needsUpdate = true
+                } }
             />
         </mesh>
         <ShootingStar

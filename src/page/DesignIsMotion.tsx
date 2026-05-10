@@ -202,15 +202,14 @@ function DecalComponent( { isDrawing }: decalProps ) {
             />
             {/* <Suspense fallback={ null }>
             </Suspense> */}
-            {/* <meshBasicMaterial
-                color={ "blue" }
-            /> */}
             <boxGeometry args={ [ viewport.width, viewport.height, 1 ] }/>
         </mesh>
     </> )
 }
 
 function Scene() {
+    const { viewport } = useThree()
+
     const time = useRef<number>( 0 )
     const nodeID = useRef<number>( 0 )
     const selectedNode = useRef<RapierRigidBody>( null )
@@ -220,19 +219,19 @@ function Scene() {
     )
     const [ characters ] = useState<characterDataStructure[]>( [
         { id: 0, text: 'D', position: { x:-18.7, y: 0 } },
-        { id: 1, text: 'E', position: { x:-16, y: 0 } },
+        { id: 1, text: 'E', position: { x:-16,   y: 0 } },
         { id: 0, text: 'S', position: { x:-13.5, y: 0 } },
         { id: 1, text: 'I', position: { x:-11.2, y: 0 } },
-        { id: 2, text: 'G', position: { x:-8.7, y: 0 } },
-        { id: 3, text: 'N', position: { x:-5.7, y: 0 } },
-        { id: 2, text: 'I', position: { x:-2, y: 0 } },
-        { id: 3, text: 'S', position: { x:0.3, y: 0 } },
-        { id: 4, text: 'M', position: { x:4.6, y: 0 } },
-        { id: 5, text: 'O', position: { x:8.1, y: 0 } },
-        { id: 4, text: 'T', position: { x:10.8, y: 0 } },
-        { id: 5, text: 'I', position: { x:13.1, y: 0 } },
-        { id: 6, text: 'O', position: { x:15.5, y: 0 } },
-        { id: 7, text: 'N', position: { x:18.6, y: 0 } }
+        { id: 2, text: 'G', position: { x:-8.7,  y: 0 } },
+        { id: 3, text: 'N', position: { x:-5.7,  y: 0 } },
+        { id: 2, text: 'I', position: { x:-2,    y: 0 } },
+        { id: 3, text: 'S', position: { x:0.3,   y: 0 } },
+        { id: 4, text: 'M', position: { x:4.6,   y: 0 } },
+        { id: 5, text: 'O', position: { x:8.1,   y: 0 } },
+        { id: 4, text: 'T', position: { x:10.8,  y: 0 } },
+        { id: 5, text: 'I', position: { x:13.1,  y: 0 } },
+        { id: 6, text: 'O', position: { x:15.5,  y: 0 } },
+        { id: 7, text: 'N', position: { x:18.6,  y: 0 } }
     ] )
 
     const onPointerDown = ( id: number, node: RapierRigidBody ) => {
@@ -267,7 +266,7 @@ function Scene() {
         return () => window.removeEventListener( "pointerup", handlePointerUp )
     }, [] )
 
-    useFrame( ( { mouse, viewport }, delta ) => {
+    useFrame( ( { mouse }, delta ) => {
         time.current += delta
 
         if ( time.current > 0.02 && selectedNode.current ) {
@@ -334,6 +333,10 @@ function Scene() {
                     ) )
                 }
                 <DecalComponent isDrawing={ isDrawing }/>
+                <mesh position={ [ 0, 0, -3 ] }>
+                    <planeGeometry args={ [ viewport.width, viewport.height ] }/>
+                    <meshBasicMaterial color={ "blue" }/>
+                </mesh>
             </Suspense>
         </Physics>
     </> )
