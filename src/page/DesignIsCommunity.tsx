@@ -38,7 +38,7 @@ function Scene() {
     const backgroundTexture = useTexture( background )
     const [ letters, setLetters ] = useState<letterDataStructure[]>(
         new Array( 33 ).fill( null ).map( ( _, index ) => ( {
-            texturePath: `/src/assets/community/slice${ index + 1 }.png`,
+            texturePath: new URL( `/src/assets/community/slice${ index + 1 }.png`, import.meta.url ).href, 
             position: { x: 0, y: 0, z: 0 },
             rotation: 0
         } ) )
