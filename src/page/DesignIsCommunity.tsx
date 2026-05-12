@@ -1,11 +1,14 @@
-import { OrbitControls, useTexture } from "@react-three/drei";
+import { OrbitControls, useFBO, useTexture } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+import { GuassianBlurVertex, GuassianBlurFragment } from "../shaders/GuassianBlur";
 
 import background from "../assets/images/background.png"
-import { SRGBColorSpace } from "three";
+import { ShaderMaterial, SRGBColorSpace, RepeatWrapping } from "three";
 
 import { ShootingStar } from "./DesignIsPlay";
+import { Cursor } from "./Home";
 
 interface letterDataStructure {
     texturePath: string
@@ -33,9 +36,12 @@ function Letter( { texturePath, position }: letterProps ) {
 }
 
 function Scene() {
-    const { viewport } = useThree()
+    const { viewport, scene, camera } = useThree()
+    const renderTarget = useFBO()
+    const guassianMaterial = useRef<ShaderMaterial>( null )
 
     const backgroundTexture = useTexture( background )
+    const [ hovered ] = useState<boolean>( false )
     const [ letters, setLetters ] = useState<letterDataStructure[]>(
         new Array( 33 ).fill( null ).map( ( _, index ) => ( {
             texturePath: new URL( `../assets/community/slice${ index + 1 }.png`, import.meta.url ).href, 
@@ -44,8 +50,27 @@ function Scene() {
         } ) )
     ) 
 
-    useFrame( ( { clock } ) => {
+    useFrame( ( { clock, gl } ) => {
         const time = clock.getElapsedTime() * 0.25
+
+        scene.children[ 34 ].visible = false
+        scene.children[ 36 ].visible = false
+
+        gl.setRenderTarget( renderTarget )
+        gl.render( scene, camera )
+
+        if ( guassianMaterial.current ) {
+            const texture = renderTarget.texture
+
+            texture.wrapS = RepeatWrapping
+            texture.wrapT = RepeatWrapping
+            guassianMaterial.current.uniforms.uTexture.value = texture
+        }
+
+        gl.setRenderTarget( null )
+
+        scene.children[ 34 ].visible = true
+        scene.children[ 36 ].visible = true
 
         setLetters( current => {
             const newLetters = [ ...current ]
@@ -78,6 +103,16 @@ function Scene() {
                     backgroundTexture.colorSpace = SRGBColorSpace
                     backgroundTexture.needsUpdate = true
                 } }
+            />
+        </mesh>
+        <mesh position={ [ 0, 0, 10 ] }>
+            <planeGeometry args={ [ viewport.width, viewport.height ] }/>
+            <shaderMaterial
+                ref={ guassianMaterial }
+                toneMapped={ true }
+                vertexShader={ GuassianBlurVertex() }
+                fragmentShader={ GuassianBlurFragment() }
+                uniforms={ { uTexture: { value: null }, uvStride: { value: [ 1 / viewport.width, 1 / viewport.height ] } } }
             />
         </mesh>
         <group
@@ -116,11 +151,20 @@ function Scene() {
                 startTime={ 0.7 }
             />
         </group>
+        <Cursor hovered={ hovered } scale={ 1 }/>
     </> )
 }
 
 export default function DesignIsCommunity() {
-    return ( <Canvas id="canvas" orthographic camera={ { zoom: 100, position: [ 0, 0, 10 ] } }>
+    return ( <Canvas
+        id="canvas"
+        orthographic
+        camera={ {
+            zoom: 100,
+            near: -20,
+            position: [ 0, 0, 10 ]
+        } }
+    >
         <Scene/>
     </Canvas> )
 }

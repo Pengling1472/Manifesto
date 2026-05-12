@@ -42,6 +42,11 @@ interface shapeProps {
 	onAction: ( id: number, node: RapierRigidBody ) => void
 }
 
+interface cursorProps {
+	hovered: boolean
+	scale?: number
+}
+
 const square = new THREE.Shape()
 	.moveTo( 1, 1 )
 	.lineTo( 1, -1 )
@@ -53,6 +58,35 @@ const triangle = new THREE.Shape()
 	.lineTo( -2 / 1.75, -2 / 3 )
 const circle = new THREE.Shape()
 	.absarc( 0, 0, 1, 0, Math.PI * 2, false )
+
+export function Cursor( { hovered, scale = 3 }: cursorProps ) {
+	const cursorRef = useRef<THREE.Mesh>( null )
+	const textures = useTexture( [ cursor, pointer ] )
+	
+	useFrame( ( { mouse, viewport } ) => {
+		if ( cursorRef.current ) {
+			const targetX = ( mouse.x * viewport.width ) / 2
+			const targetY = ( mouse.y * viewport.height ) / 2
+
+			cursorRef.current.position.set( targetX, targetY, 10 )
+		}
+	} )
+
+	return ( <mesh ref={ cursorRef } scale={ scale }>
+		<planeGeometry/>
+		<meshBasicMaterial
+			map={ textures[ hovered ? 1 : 0 ] }
+			transparent
+			toneMapped={ false }
+			onUpdate={ () => {
+				textures.forEach( texture => {
+					texture.colorSpace = THREE.SRGBColorSpace
+					texture.needsUpdate = true
+				} )
+			} }
+		/>
+	</mesh> )
+}
 
 function Shape( { id, text, position, rotation, scale, onAction }: shapeProps ) {
 	const rigidBodyRef = useRef<RapierRigidBody>( null )
@@ -155,8 +189,6 @@ function Scene() {
 	const { viewport } = useThree()
 	const backgroundTexture = useTexture( background )
 
-	const textures = useTexture( [ cursor, pointer ] )
-	const cursorRef = useRef<THREE.Mesh>( null )
 	const [ hovered, setHovered ] = useState( false )
 
 	const promptCoordinates = useRef<number[][]>( [ [ -11.55, -12 ], [ 7.8, -12 ], [ 15.2, -12 ] ] )
@@ -188,8 +220,6 @@ function Scene() {
 		}
 
 		const [ play, motion, community ] = choices
-
-		console.log( play, motion, community )
 
 		if ( play >= 1 ) return navigate( "/play" )
 		if ( motion >= 1 ) return navigate( "/motion" )
@@ -303,12 +333,6 @@ function Scene() {
 			selectedNode.current.setLinvel( { x: dx, y: dy, z: 0 }, true )
 			selectedNode.current.setTranslation( { x: position.x, y: position.y, z: -2 }, true )	
 		}
-		if ( cursorRef.current ) {
-			const targetX = ( mouse.x * viewport.width ) / 2
-			const targetY = ( mouse.y * viewport.height ) / 2
-
-			cursorRef.current.position.set( targetX, targetY, 10 )
-		}
 	} )
 
 	useEffect( () => {
@@ -375,20 +399,7 @@ function Scene() {
 						backgroundTexture.needsUpdate = true
 					} }/>
 				</mesh>
-				<mesh ref={ cursorRef } scale={ 3 }>
-					<planeGeometry/>
-					<meshBasicMaterial
-						map={ textures[ hovered ? 1 : 0 ] }
-						transparent
-						toneMapped={ false }
-						onUpdate={ () => {
-							textures.forEach( texture => {
-								texture.colorSpace = THREE.SRGBColorSpace
-								texture.needsUpdate = true
-							} )
-						} }
-					/>
-				</mesh>
+				<Cursor hovered={ hovered }/>
 			</Suspense>
 		</Physics>
 	</> )

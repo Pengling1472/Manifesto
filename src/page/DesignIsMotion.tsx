@@ -12,6 +12,9 @@ import * as THREE from "three"
 
 import { DecalVertex, DecalFragment } from '../shaders/Decal'
 
+import { Cursor } from './Home'
+import { ShootingStar } from './DesignIsPlay'
+
 import trail1 from "../assets/motion/1-trail.png"
 import trail2 from "../assets/motion/2-trail.png"
 import trail3 from "../assets/motion/3-trail.png"
@@ -102,7 +105,7 @@ function Particle( { id, trailID, active, velocity, position, onAction }: partic
     >
         <mesh
             visible={ isActive }
-            scale={ 3 }
+            scale={ 1.5 }
         >
             <boxGeometry args={ [ 1, 1, 0.1 ] }/>
             <meshBasicMaterial
@@ -129,7 +132,7 @@ function Character( { id, text, position, onAction }: characterProps ) {
         >
             <Text
                 font={ telegraphBold }
-                fontSize={ 4 }
+                fontSize={ 1 }
                 color="white"
                 onPointerDown={ () => {
                     if ( rigidBodyRef.current ) onAction( id, rigidBodyRef.current )
@@ -185,7 +188,7 @@ function DecalComponent( { isDrawing }: decalProps ) {
             const targetX = mouse.x * viewport.width * 40 / 2
 			const targetY = mouse.y * viewport.height * 40 / 2
 
-            ctx.drawImage( brush, targetX + viewport.width / 2 * 40 - 300 / 2, -targetY + viewport.height / 2 * 40 - 300 / 2, 300, 300 )
+            ctx.drawImage( brush, targetX + viewport.width / 2 * 40 - 80 / 2, -targetY + viewport.height / 2 * 40 - 80 / 2, 80, 80 )
 
             texture.needsUpdate = true
         }
@@ -193,7 +196,7 @@ function DecalComponent( { isDrawing }: decalProps ) {
 
     return ( <>
         <mesh
-            position={ [ 0, 0, -2 ] }
+            position={ [ 0, 0, -5 ] }
         >
             <shaderMaterial
                 vertexShader={ DecalVertex() }
@@ -213,25 +216,26 @@ function Scene() {
     const time = useRef<number>( 0 )
     const nodeID = useRef<number>( 0 )
     const selectedNode = useRef<RapierRigidBody>( null )
+    const [ hovered, setHovered ] = useState<boolean>( false )
     const [ isDrawing, setIsDrawing ] = useState<boolean>( false )
     const [ particles, setParticles ] = useState<particlesDataStructure[]>(
         new Array( 60 ).fill( null ).map( ( _, index ) => ( { id: index, trailID: index % 8, active: false, velocity: { x: 0, y: 0 }, position: { x: 0, y: 0 } } ) )
     )
     const [ characters ] = useState<characterDataStructure[]>( [
-        { id: 0, text: 'D', position: { x:-18.7, y: 0 } },
-        { id: 1, text: 'E', position: { x:-16,   y: 0 } },
-        { id: 0, text: 'S', position: { x:-13.5, y: 0 } },
-        { id: 1, text: 'I', position: { x:-11.2, y: 0 } },
-        { id: 2, text: 'G', position: { x:-8.7,  y: 0 } },
-        { id: 3, text: 'N', position: { x:-5.7,  y: 0 } },
-        { id: 2, text: 'I', position: { x:-2,    y: 0 } },
-        { id: 3, text: 'S', position: { x:0.3,   y: 0 } },
-        { id: 4, text: 'M', position: { x:4.6,   y: 0 } },
-        { id: 5, text: 'O', position: { x:8.1,   y: 0 } },
-        { id: 4, text: 'T', position: { x:10.8,  y: 0 } },
-        { id: 5, text: 'I', position: { x:13.1,  y: 0 } },
-        { id: 6, text: 'O', position: { x:15.5,  y: 0 } },
-        { id: 7, text: 'N', position: { x:18.6,  y: 0 } }
+        { id: 0, text: 'D', position: { x: -4.675, y: 0 } },
+        { id: 1, text: 'E', position: { x: -4,   y: 0 } },
+        { id: 0, text: 'S', position: { x: -3.375, y: 0 } },
+        { id: 1, text: 'I', position: { x: -2.8, y: 0 } },
+        { id: 2, text: 'G', position: { x: -2.175,  y: 0 } },
+        { id: 3, text: 'N', position: { x: -1.425,  y: 0 } },
+        { id: 2, text: 'I', position: { x: -0.5,    y: 0 } },
+        { id: 3, text: 'S', position: { x: 0.075,   y: 0 } },
+        { id: 4, text: 'M', position: { x: 1.15,   y: 0 } },
+        { id: 5, text: 'O', position: { x: 2.025,   y: 0 } },
+        { id: 4, text: 'T', position: { x: 2.7,  y: 0 } },
+        { id: 5, text: 'I', position: { x: 3.275,  y: 0 } },
+        { id: 6, text: 'O', position: { x: 3.875,  y: 0 } },
+        { id: 7, text: 'N', position: { x: 4.65,  y: 0 } }
     ] )
 
     const onPointerDown = ( id: number, node: RapierRigidBody ) => {
@@ -240,6 +244,7 @@ function Scene() {
             nodeID.current = id
 
             setIsDrawing( true )
+            setHovered( true )
         }
     }
 
@@ -248,6 +253,7 @@ function Scene() {
         time.current = 0
 
         setIsDrawing( false )
+        setHovered( false )
     }
 
     const disableParticle = ( id: number ) => {
@@ -275,7 +281,7 @@ function Scene() {
             const index = particles.findIndex( particle => !particle.active )
             const nodeVelocity = selectedNode.current.linvel()
 
-            if ( index > -1 && ( Math.abs( nodeVelocity.x ) >= 0.1 || Math.abs( nodeVelocity.y ) >= 0.1 ) ) {
+            if ( index > -1 && ( Math.abs( nodeVelocity.x ) >= 1 || Math.abs( nodeVelocity.y ) >= 1 ) ) {
                 const nodePosition = selectedNode.current.translation()
 
                 nodeVelocity.x = Math.min( Math.max( -nodeVelocity.x, -3 ), 3 )
@@ -311,8 +317,9 @@ function Scene() {
         <Physics gravity={ [ 0, 0, 0 ] }>
             <Suspense fallback={ null }>
                 {
-                    characters.map( character => (
+                    characters.map( ( character, index ) => (
                         <Character
+                            key={ index }
                             id={ character.id }
                             text={ character.text }
                             position={ character.position }
@@ -323,6 +330,7 @@ function Scene() {
                 {
                     particles.map( particle => (
                         <Particle
+                            key={ particle.id }
                             id={ particle.id }
                             trailID={ particle.trailID }
                             active={ particle.active }
@@ -333,10 +341,41 @@ function Scene() {
                     ) )
                 }
                 <DecalComponent isDrawing={ isDrawing }/>
-                <mesh position={ [ 0, 0, -3 ] }>
-                    <planeGeometry args={ [ viewport.width, viewport.height ] }/>
-                    <meshBasicMaterial color={ "blue" }/>
-                </mesh>
+                <group position={ [ 0, 0, 0 ] }>
+                    <ShootingStar
+                        startingPosition={ { x: 2 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                        startTime={ 0.2 }
+                    />
+                    <ShootingStar
+                        startingPosition={ { x: 6 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                        startTime={ 0.6 }
+                    />
+                    <ShootingStar
+                        startingPosition={ { x: 8 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                        startTime={ 0.3 }
+                    />
+                    <ShootingStar
+                        startingPosition={ { x: viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                        startTime={ 0.9 }
+                    />
+                    <ShootingStar
+                        startingPosition={ { x: 10 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                        startTime={ 0 }
+                    />
+                    <ShootingStar
+                        startingPosition={ { x: 15 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                        startTime={ 0.5 }
+                    />
+                    <ShootingStar
+                        startingPosition={ { x: 3 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                        startTime={ 0.4 }
+                    />
+                    <ShootingStar
+                        startingPosition={ { x: 8 -  viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                        startTime={ 0.7 }
+                    />
+                </group>
+                <Cursor hovered={ hovered } scale={ 1 }/>
             </Suspense>
         </Physics>
     </> )
@@ -345,10 +384,10 @@ function Scene() {
 export default function DesignIsMotion() {
     return (
         <section className='design-is-motion'>
-            <Canvas id='canvas' orthographic camera={ { zoom: 25, near: -20 } } dpr={ 1 }>
+            <Canvas id='canvas' orthographic camera={ { zoom: 100, near: -20 } } dpr={ 1 }>
                 {/* <OrbitControls/> */}
                 {/* <gridHelper args={ [ 40, 20 ] } rotation-x={ Math.PI / 2 }/> */}
-                <ambientLight intensity={ 10 }/>
+                {/* <ambientLight intensity={ 10 }/> */}
                 <Scene/>
             </Canvas>
         </section>

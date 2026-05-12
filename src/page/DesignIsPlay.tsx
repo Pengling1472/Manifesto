@@ -1,12 +1,16 @@
-import { OrbitControls, useTexture } from "@react-three/drei"
-import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { Center, OrbitControls, useTexture } from "@react-three/drei"
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber"
 
 import { TwinkleVertex, TwinkleFragment } from "../shaders/Twinkle"
-import { Suspense, useEffect, useRef, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { SRGBColorSpace, type Mesh, type ShaderMaterial } from "three"
 
 import background from "../assets/images/background.png"
 import shootingStar from "../assets/images/shooting-star.png"
+import playText from "../assets/svg/play-text.svg"
+
+import { Cursor } from "./Home"
+import { SVGLoader } from "three/examples/jsm/Addons.js"
 
 enum starColors {
     Green,
@@ -49,7 +53,7 @@ const starsData: {
     { scale: 3.2, color: starColors.Green  , position: { x: -2.33, y: 3.81  } }
 ]
 
-interface sparkleProps {
+interface twinkleProps {
     index: number
     position: { x: number, y: number }
     texturePath: string
@@ -58,7 +62,7 @@ interface sparkleProps {
     onAction: ( id: number, node: Mesh ) => void 
 }
 
-interface sparkleDataStructure {
+interface twinkleDataStructure {
     texturePath: string
     position: { x: number, y: number }
     scale: number
@@ -78,7 +82,7 @@ export function ShootingStar( { startingPosition, startTime }: shootingStarProps
     const targetPosition = useRef<{ x: number, y: number }>( { x: 20, y: 20 } )
 
     useFrame( ( _, delta ) => {
-        time.current = Math.min( time.current + delta * speed.current, 1 )
+        time.current = Math.min( time.current + Math.min( delta, 0.1 ) * speed.current, 1 )
         
         if ( meshRef.current ) {
             if ( time.current == 1 ) {
@@ -110,7 +114,7 @@ export function ShootingStar( { startingPosition, startTime }: shootingStarProps
     </mesh> )
 }
 
-function Sparkle( { index, position, texturePath, scale, color, onAction }: sparkleProps ) {
+function Twinkle( { index, position, texturePath, scale, color, onAction }: twinkleProps ) {
     const randomTimeRef = useRef<number>( Math.floor( Math.random() * 100 ) )
     const meshRef = useRef<Mesh>( null )
     const materialRef = useRef<ShaderMaterial>( null )
@@ -165,11 +169,16 @@ function Sparkle( { index, position, texturePath, scale, color, onAction }: spar
 function Scene() {
     const { viewport } = useThree()
 
+    const svgData = useLoader( SVGLoader, playText )
+    const shapes = useMemo( () => ( svgData.paths.map( path => path.toShapes( true ) ) ), [ svgData ] )
+
     const meshRef = useRef<Mesh>( null )
     const indexRef = useRef<number>( null )
     const backgroundTexture = useTexture( background )
+    // const playTexture = useTexture( playText )
     const lightScale = useRef<number[]>( new Array( 26 ).fill( 0 ) )
-    const [ stars, setStars ] = useState<sparkleDataStructure[]>( () =>
+    const [ hovered ] = useState<boolean>( false )
+    const [ stars, setStars ] = useState<twinkleDataStructure[]>( () =>
         new Array( 26 ).fill( null ).map( ( _, index ) => ( {
             texturePath: new URL( `../assets/play/${ index + 1 }.svg`, import.meta.url ).href,
             ...starsData[ index ]
@@ -184,7 +193,7 @@ function Scene() {
     }
 
     const onPointerUp = () => {
-        if ( meshRef.current && indexRef.current != null ) {
+        if ( !meshRef.current && indexRef.current != null ) {
             const index = indexRef.current
 
             lightScale.current[ index ] += 0.1 
@@ -196,8 +205,6 @@ function Scene() {
 
                 return newStars
             } )
-
-            console.log( lightScale.current )
 
             meshRef.current = null
         }
@@ -220,7 +227,7 @@ function Scene() {
 
     return ( <Suspense fallback={ null }>
         { stars.map( ( star, index ) => (
-            <Sparkle
+            <Twinkle
                 key={ index }
                 index={ index }
                 position={ star.position }
@@ -241,43 +248,73 @@ function Scene() {
                 } }
             />
         </mesh>
-        <ShootingStar
-            startingPosition={ { x: 2 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
-            startTime={ 0.2 }
-        />
-        <ShootingStar
-            startingPosition={ { x: 6 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
-            startTime={ 0.6 }
-        />
-        <ShootingStar
-            startingPosition={ { x: 8 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
-            startTime={ 0.3 }
-        />
-        <ShootingStar
-            startingPosition={ { x: viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
-            startTime={ 0.9 }
-        />
-        <ShootingStar
-            startingPosition={ { x: 10 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
-            startTime={ 0 }
-        />
-        <ShootingStar
-            startingPosition={ { x: 15 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
-            startTime={ 0.5 }
-        />
-        <ShootingStar
-            startingPosition={ { x: 3 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
-            startTime={ 0.4 }
-        />
-        <ShootingStar
-            startingPosition={ { x: 8 -  viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
-            startTime={ 0.7 }
-        />
+        <Center>
+            <mesh scale={[ 0.01, -0.01, 1 ] } position={ [ 0, 0, 1 ] }>
+                {/* <planeGeometry args={ [ viewport.width, viewport.height ] }/>
+                <meshBasicMaterial
+                    map={ playTexture }
+                /> */}
+                { shapes.map( ( shape, index ) => (
+                    <mesh>
+                        <extrudeGeometry
+                            args={ [ shape, {
+                                depth: 0.2,
+                                bevelEnabled: false,
+                                steps: 1
+                            } ] }
+                        />
+                        <meshBasicMaterial
+                            color={ svgData.paths[ index ].color }
+                        />
+                    </mesh>
+                ) ) }
+            </mesh>
+        </Center>
+        <group position={ [ 0, 0, -0.5 ] }>
+            <ShootingStar
+                startingPosition={ { x: 2 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                startTime={ 0.2 }
+            />
+            <ShootingStar
+                startingPosition={ { x: 6 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                startTime={ 0.6 }
+            />
+            <ShootingStar
+                startingPosition={ { x: 8 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                startTime={ 0.3 }
+            />
+            <ShootingStar
+                startingPosition={ { x: viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                startTime={ 0.9 }
+            />
+            <ShootingStar
+                startingPosition={ { x: 10 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                startTime={ 0 }
+            />
+            <ShootingStar
+                startingPosition={ { x: 15 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                startTime={ 0.5 }
+            />
+            <ShootingStar
+                startingPosition={ { x: 3 - viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                startTime={ 0.4 }
+            />
+            <ShootingStar
+                startingPosition={ { x: 8 -  viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
+                startTime={ 0.7 }
+            />
+        </group>
+        <Cursor hovered={ hovered } scale={ 1 }/>
     </Suspense> )
 }
 
 export default function DesignIsPlay() {
-    return ( <Canvas id="canvas" orthographic camera={ { zoom: 90 } } dpr={ 2 }>
+    return ( <Canvas
+        id="canvas"
+        orthographic
+        camera={ { zoom: 90, near: -20 } }
+        dpr={ 1 }
+    >
         <OrbitControls/>
         <Scene/>
     </Canvas> )
