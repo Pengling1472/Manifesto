@@ -404,7 +404,7 @@ function Scene() {
 					As a‎‎‎‎‎designer, I create‎‎‎‎‎by‎‎‎‎‎.
 				</Text>
 				<Text
-					position={ [ 0, -13, 3 ] }
+					position={ [ 0, -13, -2.9 ] }
 					font={ courierPrimeBold }
 					fontSize={ 1 }
 					textAlign="center"
@@ -412,7 +412,7 @@ function Scene() {
 				>
 					Create
 				</Text>
-				<Center position={ [ 0, -13, 0 ] } scale={ 0.15 }>
+				<Center position={ [ 0, -13, -3 ] } scale={ 0.15 }>
 					<mesh
 						onPointerDown={ () => {
 							if ( promptNodes.current.every( node => node != null ) ) redirect()
