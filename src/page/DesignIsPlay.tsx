@@ -7,7 +7,6 @@ import { SRGBColorSpace, type Mesh, type ShaderMaterial } from "three"
 
 import background from "../assets/images/background.png"
 import shootingStar from "../assets/images/shooting-star.png"
-import playText from "../assets/svg/play-text.svg"
 
 import { Cursor } from "./Home"
 import { SVGLoader } from "three/examples/jsm/Addons.js"
