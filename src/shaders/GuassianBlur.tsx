@@ -61,10 +61,13 @@ vec3 hsl2rgb( in vec3 c )
     return c.z + c.y * (rgb-0.5)*(1.0-abs(2.0*c.z-1.0));
 }
 
+precision mediump float;
+
 varying vec2 vUv;
 varying vec3 vPosition;
 
 uniform sampler2D uTexture;
+uniform float uOpacity;
 uniform vec2 uvStride;
 
 void main() {
@@ -77,7 +80,7 @@ void main() {
     for ( float x = -radius; x <= radius; x++ ) {
         for ( float y = -radius; y <= radius; y++ ) {
             vec2 offset = vec2( x, y );
-            vec4 cell = texture2D( uTexture, vUv + offset * uvStride * 0.03 );
+            vec4 cell = texture2D( uTexture, vUv + offset * uvStride * 0.03 ) * 0.4;
 
             float sigma = 2.5;
             float weight = exp( -0.5 * ( x * x + y * y ) / ( sigma * sigma ) );
@@ -92,7 +95,7 @@ void main() {
     vec3 hslColor = rgb2hsl( result.rgb );
     vec3 newColor = hsl2rgb( vec3( hslColor.x, hslColor.y, hslColor.z - noise( vPosition.xy * 32.0 ) * 0.0015 ) );
     
-    gl_FragColor = vec4( newColor, 1.0 );
+    gl_FragColor = vec4( newColor, uOpacity );
 
     #include <colorspace_fragment> 
 }

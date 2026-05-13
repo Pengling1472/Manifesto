@@ -1,6 +1,6 @@
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Suspense, useEffect, useRef, useState } from 'react'	
-import { Text, useTexture } from "@react-three/drei" 
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'	
+import { Center, Text, useTexture } from "@react-three/drei" 
 import { CuboidCollider, Physics, RapierRigidBody, RigidBody } from '@react-three/rapier'
 
 import telegraphRegular from "../assets/fonts/Telegraf_Regular.otf"
@@ -15,6 +15,10 @@ import { useNavigate } from 'react-router-dom'
 import background from "../assets/images/background.png"
 import pointer from "../assets/images/pointer.png"
 import cursor from "../assets/images/cursor.png"
+import button from "../assets/svg/home-button.svg"
+import { SVGLoader } from 'three/examples/jsm/Addons.js'
+
+import courierPrimeBold from "../assets/fonts/CourierPrime-Bold.ttf"
 
 enum PMCTypes {
 	Play,
@@ -75,7 +79,7 @@ export function Cursor( { scale = 3 }: cursorProps ) {
 			const targetX = ( mouse.x * viewport.width ) / 2
 			const targetY = ( mouse.y * viewport.height ) / 2
 
-			cursorRef.current.position.set( targetX, targetY, 10 )
+			cursorRef.current.position.set( targetX, targetY, 12 )
 		}
 	} )
 
@@ -206,7 +210,10 @@ function Scene() {
 	const { viewport } = useThree()
 	const backgroundTexture = useTexture( background )
 
-	const promptCoordinates = useRef<number[][]>( [ [ -11.55, -12 ], [ 7.8, -12 ], [ 15.2, -12 ] ] )
+	const svgButtonData = useLoader( SVGLoader, button )
+	const buttonShapes = useMemo( () => ( svgButtonData.paths.map( path => path.toShapes( true ) ) ), [ svgButtonData ] )
+
+	const promptCoordinates = useRef<number[][]>( [ [ -11.68, -10 ], [ 7.67, -10 ], [ 14.95, -10 ] ] )
 	const selectedNode = useRef<RapierRigidBody>( null )
 	const isDragging = useRef<boolean>( false )
 	const nodeID = useRef<number>( 0 )
@@ -287,8 +294,6 @@ function Scene() {
 					
 					shapes[ nodeID.current ].isDragging = false
 
-					if ( promptNodes.current.every( node => node != null ) ) redirect()
-
 					node.setTranslation( { x: position.x, y: position.y, z: -10 }, true )
 					node.setEnabledRotations( false, false, false, true )
 
@@ -304,7 +309,6 @@ function Scene() {
 			isDragging.current = false
 			selectedNode.current = null
 
-			// setHovered( false )
 			setShapes( current => {
 				const newShapes = [ ...current ]
 
@@ -371,40 +375,66 @@ function Scene() {
 					/>
 				) }
 				<mesh
-					position={ [ -11.55, -12, -10 ] }
+					position={ [ -11.68, -10, -10 ] }
 					scale={ 1.5 }>
 					<shapeGeometry args={ [ triangle ] }/>
-					<meshBasicMaterial color={ "white" }/>
+					<meshBasicMaterial color={ "#F7E0A8" }/>
 					<extrudeGeometry args={ [ triangle, { depth: 0.1, bevelEnabled: false } ] }/>
 				</mesh>
 				<mesh	
-					position={ [ 7.8, -12, -10 ] }
+					position={ [ 7.67, -10, -10 ] }
 					scale={ 1.5 }>
 					<shapeGeometry args={ [ triangle ] }/>
-					<meshBasicMaterial color={ "white" }/>
+					<meshBasicMaterial color={ "#F7E0A8" }/>
 					<extrudeGeometry args={ [ circle, { depth: 0.1, bevelEnabled: false } ] }/>
 				</mesh>
 				<mesh
-					position={ [ 15.2, -12, -10 ] }
+					position={ [ 14.95, -10, -10 ] }
 					scale={ 1.5 }>
 					<shapeGeometry args={ [ triangle ] }/>
-					<meshBasicMaterial color={ "white" }/>
+					<meshBasicMaterial color={ "#F7E0A8" }/>
 					<extrudeGeometry args={ [ square, { depth: 0.1, bevelEnabled: false } ] }/>
 				</mesh>
 				<Text
-					position={ [ 0, -12, -3 ] }
+					position={ [ 0, -10, -3 ] }
 					font={ telegraphRegular }
 					fontSize={ 1.75 }
-					textAlign='center'>
-					As a‎‎‎‎‎designer, I create‎‎‎‎‎by‎‎‎‎‎
+					textAlign='center'
+				>
+					As a‎‎‎‎‎designer, I create‎‎‎‎‎by‎‎‎‎‎.
 				</Text>
 				<Text
-					position={ [ 0, -14, -3 ] }
-					font={ telegraphRegular }
-					fontSize={ 0.75 }
-					textAlign='center'>
-					P.S: You can't have them all
+					position={ [ 0, -13, 3 ] }
+					font={ courierPrimeBold }
+					fontSize={ 1 }
+					textAlign="center"
+					color="black"
+				>
+					Create
 				</Text>
+				<Center position={ [ 0, -13, 0 ] } scale={ 0.15 }>
+					<mesh
+						onPointerDown={ () => {
+							if ( promptNodes.current.every( node => node != null ) ) redirect()
+						} }
+					>
+						{
+							buttonShapes.map( ( shape, index ) => ( <mesh key={ index }>
+								<extrudeGeometry
+									args={ [ shape, {
+										depth: 0.1,
+										bevelEnabled: false,
+										steps: 1
+									} ] }
+								/>
+								<meshBasicMaterial
+									color={ svgButtonData.paths[ index ].color }
+									transparent
+								/>
+							</mesh> ) )
+						}
+					</mesh>
+				</Center>
 				<mesh position={ [ 0, 0, -10 ] }>
 					<planeGeometry args={ [ viewport.width, viewport.height ] }/>
 					<meshBasicMaterial map={ backgroundTexture } toneMapped={ false } onUpdate={ () => {
@@ -425,166 +455,7 @@ export default function Home() {
 			orthographic
 			camera={ { zoom: 30, near: -20 } }
 		>
-			{/* <ambientLight intensity={ 10 }/> */}
-			{/* <OrbitControls/> */}
-			{/* <gridHelper args={ [ 40, 20 ] } rotation-x={ Math.PI / 2 }/> */}
 			<Scene/>
 		</Canvas>
 	</> )
 }
-
-
-// import { Shape, Circle, Square, Triangle } from '../models/FunCanvas.models'
-// import { Node } from '../models/Node.models.tsx'
-
-// import Matter, { MouseConstraint, Render } from 'matter-js'
-
-
-	// const canvasRef = useRef<HTMLCanvasElement>( null )
-	// const engineRef = useRef<Matter.Engine>( Matter.Engine.create() )
-	// const requestRef = useRef<number>( 0 )
-
-	// const eventsRef = useRef<Matter.Events[]>( [] )
-	
-	// const delta = useRef<number>( 0 )
-	// const lastTime = useRef<number>( 0 )
-	
-	// const bodyRef = useRef<Node>( null )
-	// const components = useRef<Node[]>( [] )
-	
-	// const tick = ( timestamp: number ) => {
-	// 	const canvas = canvasRef.current
-		
-	// 	if ( !canvas ) return
-		
-	// 	const ctx = canvas.getContext( "2d" ) as CanvasRenderingContext2D
-		
-	// 	delta.current = timestamp - lastTime.current
-	// 	lastTime.current = timestamp
-		
-	// 	requestRef.current = requestAnimationFrame( tick )
-
-	// 	Matter.Engine.update( engineRef.current )
-		
-	// 	ctx.clearRect( 0, 0, canvas.width, canvas.height )
-		
-	// 	for ( const component of components.current ) component.process( canvas, ctx, delta.current, components.current )
-	// }
-	
-	// useEffect( () => {
-	// 	const canvas = canvasRef.current
-		
-	// 	if ( !canvas ) return
-
-	// 	renderer.current.render( scene, camera )
-
-	// 	const engine = engineRef.current
-
-	// 	Matter.Composite.clear( engine.world, false )
-
-	// 	const render = Render.create( {
-	// 		element: document.body,
-	// 		engine: engine,
-	// 		canvas: canvas
-	// 	} )
-	// 	const canvasMouse = Matter.Mouse.create( render.canvas )
-	// 	const canvasMouseConstraint = MouseConstraint.create( engine, {
-	// 		mouse: canvasMouse,
-	// 		constraint: {
-	// 			stiffness: 0,
-	// 			// damping: 0.8,
-	// 			render: {
-	// 				visible: true
-	// 			}
-	// 		}
-	// 	} )
-		
-	// 	Matter.World.add( engine.world, canvasMouseConstraint )
-		
-	// 	render.mouse = canvasMouse
-
-	// 	Render.run( render )
-
-	// 	components.current = []
-		
-	// 	// canvas.width = 1920
-	// 	// canvas.height = 1080
-
-	// 	engine.gravity.scale = 0
-		
-	// 	Matter.World.add( engine.world, Matter.Bodies.rectangle( canvas.width/2, -100, canvas.width + 200, 200, { isStatic: true } ) )
-	// 	Matter.World.add( engine.world, Matter.Bodies.rectangle( -100, canvas.height/2, 200, canvas.height + 200, { isStatic: true } ) )
-	// 	Matter.World.add( engine.world, Matter.Bodies.rectangle( canvas.width + 100, canvas.height/2, 200, canvas.height + 200, { isStatic: true } ) )
-	// 	Matter.World.add( engine.world, Matter.Bodies.rectangle( canvas.width/2, canvas.height + 100, canvas.width + 200, 200, { isStatic: true } ) )
-		
-	// 	components.current.push( new Circle( canvas.width * 0.25, canvas.height * 0.25, "Rhythym", engine ) )
-	// 	components.current.push( new Circle( canvas.width * 0.5, canvas.height * 0.25, "Diversity", engine ) )
-	// 	components.current.push( new Circle( canvas.width * 0.75, canvas.height * 0.25, "Surpises", engine ) )
-
-	// 	components.current.push( new Square( canvas.width * 0.25, canvas.height * 0.5, "Making/Changes", engine ) )
-	// 	// components.current.push( new Square( canvas.width * 0.5, canvas.height * 0.5, "Bringing/it to life", engine ) )
-	// 	// components.current.push( new Square( canvas.width * 0.75, canvas.height * 0.5, "Outside/of the grid", engine ) )
-
-	// 	components.current.push( new Triangle( canvas.width * 0.25, canvas.height * 0.75, "Fluid", engine ) )
-	// 	components.current.push( new Triangle( canvas.width * 0.5, canvas.height * 0.75, "Fearless", engine ) )
-	// 	components.current.push( new Triangle( canvas.width * 0.75, canvas.height * 0.75, "Colla-/borative", engine ) )
-		
-	// 	requestRef.current = requestAnimationFrame( () => tick( lastTime.current ) )
-
-	// 	if ( eventsRef.current.length == 0 ) {
-	// 		// setTimeout(() => {
-	// 		// 	components.current.push( new Test( canvas.width * 0.75, canvas.height * 0.75, engine ) )
-	// 		// }, 100 );
-
-
-	// 		eventsRef.current.push( Matter.Events.on( canvasMouseConstraint, 'startdrag', event => {
-	// 			if ( bodyRef.current ) return 
-
-	// 			const index = components.current.findIndex( component => {
-	// 				if ( component instanceof Shape ) return component.body == event.source.body
-	// 			} )
-
-	// 			if ( index >= 0 ) {
-	// 				bodyRef.current = components.current[ index ]
-
-	// 				const node = components.current.splice( index, 1 )[ 0 ]
-
-	// 				if ( node instanceof Shape ) {
-	// 					node.body.isSensor = true
-	// 					node.dragged = true
-	// 				}
-	
-	// 				components.current.push( node )
-	// 			}
-	// 		} ) )
-	
-	// 		eventsRef.current.push( Matter.Events.on( canvasMouseConstraint, 'enddrag', () => {
-	// 			if ( bodyRef.current ) {
-	// 				if ( bodyRef.current instanceof Shape ) {
-	// 					bodyRef.current.body.isSensor = false
-	// 					bodyRef.current.dragged = false
-	// 				}
-	// 				bodyRef.current = null
-	// 			}
-	// 		} ) )
-	
-	// 		eventsRef.current.push( Matter.Events.on( engine, 'beforeUpdate', () => {
-	// 			if ( bodyRef.current && bodyRef.current instanceof Shape ) {
-	// 				const body = bodyRef.current.body
-	// 				const position = bodyRef.current.body.position
-	// 				const mouseX = canvasMouseConstraint.mouse.position.x
-	// 				const mouseY = canvasMouseConstraint.mouse.position.y
-
-	// 				const dx = mouseX - position.x
-	// 				const dy = mouseY - position.y
-
-	// 				Matter.Body.setVelocity( body, { x: dx * 0.05, y: dy * 0.05 });
-	// 			}
-	// 		} ) )
-	// 	}
-
-		
-	// 	return () => {
-	// 		if ( requestRef.current ) cancelAnimationFrame( requestRef.current )
-	// 	}
-	// } )

@@ -146,20 +146,6 @@ function Character( { id, text, position, onAction }: characterProps ) {
 function DecalComponent( { isDrawing }: decalProps ) {
     const { viewport } = useThree()
     const backgroundTexture = useTexture( motionBackground )
-    // const backgroundTexture = useMemo( () => {
-    //     const canvas = document.createElement( "canvas" )
-    //     const ctx = canvas.getContext( "2d" ) as CanvasRenderingContext2D
-    //     const background = motionTexture.image as HTMLImageElement
-
-    //     canvas.width = viewport.width * 40
-    //     canvas.height = viewport.height * 40
-
-    //     console.log( canvas.width, canvas.height )
-
-    //     ctx.drawImage( background, canvas.width / 2 - 1920 / 2, canvas.height / 2 - 1080 / 2, 1920, 1080 )
-        
-    //     return new THREE.CanvasTexture( canvas )
-    // }, [ motionTexture, viewport ] )
     const brush = useMemo( () => {
         const brush = new Image()
 
@@ -203,8 +189,6 @@ function DecalComponent( { isDrawing }: decalProps ) {
                 fragmentShader={ DecalFragment() }
                 uniforms={ { uTexture: { value: texture }, uBackground: { value: backgroundTexture } } }
             />
-            {/* <Suspense fallback={ null }>
-            </Suspense> */}
             <boxGeometry args={ [ viewport.width, viewport.height, 1 ] }/>
         </mesh>
     </> )
@@ -382,9 +366,6 @@ export default function DesignIsMotion() {
     return (
         <section className='design-is-motion'>
             <Canvas id='canvas' orthographic camera={ { zoom: 100, near: -20 } } dpr={ 1 }>
-                {/* <OrbitControls/> */}
-                {/* <gridHelper args={ [ 40, 20 ] } rotation-x={ Math.PI / 2 }/> */}
-                {/* <ambientLight intensity={ 10 }/> */}
                 <Scene/>
             </Canvas>
         </section>
