@@ -1,8 +1,8 @@
-import { Center, OrbitControls, useTexture } from "@react-three/drei"
+import { Center, useTexture } from "@react-three/drei"
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber"
 
 import { TwinkleVertex, TwinkleFragment } from "../shaders/Twinkle"
-import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useMemo, useRef, useState } from "react"
 import { SRGBColorSpace, type Mesh, type ShaderMaterial } from "three"
 
 import background from "../assets/images/background.png"
@@ -72,10 +72,6 @@ interface twinkleDataStructure {
 interface shootingStarProps {
     startingPosition: { x: number, y: number }
     startTime: number
-}
-
-interface playAudioDataStructure {
-    audioPath: string
 }
 
 export function ShootingStar( { startingPosition, startTime }: shootingStarProps ) {
@@ -182,8 +178,8 @@ function Scene() {
     const svgData = useLoader( SVGLoader, playText )
     const shapes = useMemo( () => ( svgData.paths.map( path => path.toShapes( true ) ) ), [ svgData ] )
 
-    const meshRef = useRef<Mesh>( null )
-    const indexRef = useRef<number>( null )
+    // const meshRef = useRef<Mesh>( null )
+    // const indexRef = useRef<number>( null )
     const backgroundTexture = useTexture( background )
     const [ stars ] = useState<twinkleDataStructure[]>( () =>
         new Array( 26 ).fill( null ).map( ( _, index ) => ( {
