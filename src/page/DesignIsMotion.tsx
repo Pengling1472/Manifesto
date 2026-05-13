@@ -216,7 +216,6 @@ function Scene() {
     const time = useRef<number>( 0 )
     const nodeID = useRef<number>( 0 )
     const selectedNode = useRef<RapierRigidBody>( null )
-    const [ hovered, setHovered ] = useState<boolean>( false )
     const [ isDrawing, setIsDrawing ] = useState<boolean>( false )
     const [ particles, setParticles ] = useState<particlesDataStructure[]>(
         new Array( 60 ).fill( null ).map( ( _, index ) => ( { id: index, trailID: index % 8, active: false, velocity: { x: 0, y: 0 }, position: { x: 0, y: 0 } } ) )
@@ -244,7 +243,6 @@ function Scene() {
             nodeID.current = id
 
             setIsDrawing( true )
-            setHovered( true )
         }
     }
 
@@ -253,7 +251,6 @@ function Scene() {
         time.current = 0
 
         setIsDrawing( false )
-        setHovered( false )
     }
 
     const disableParticle = ( id: number ) => {
@@ -375,7 +372,7 @@ function Scene() {
                         startTime={ 0.7 }
                     />
                 </group>
-                <Cursor hovered={ hovered } scale={ 1 }/>
+                <Cursor scale={ 1 }/>
             </Suspense>
         </Physics>
     </> )

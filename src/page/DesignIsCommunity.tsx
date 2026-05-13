@@ -41,11 +41,10 @@ function Scene() {
     const guassianMaterial = useRef<ShaderMaterial>( null )
 
     const backgroundTexture = useTexture( background )
-    const [ hovered ] = useState<boolean>( false )
     const [ letters, setLetters ] = useState<letterDataStructure[]>(
         new Array( 33 ).fill( null ).map( ( _, index ) => ( {
             texturePath: new URL( `../assets/community/slice${ index + 1 }.png`, import.meta.url ).href, 
-            position: { x: 0, y: 0, z: 0 },
+            position: { x: 6 * Math.cos( 2 * Math.PI * index / 33 ), y: 1.5 * Math.sin( 3.1 + 4 * Math.PI * index / 33 * 2 ), z: 6 * Math.sin( 2 * Math.PI * index / 33 ) },
             rotation: 0
         } ) )
     ) 
@@ -151,7 +150,7 @@ function Scene() {
                 startTime={ 0.7 }
             />
         </group>
-        <Cursor hovered={ hovered } scale={ 1 }/>
+        <Cursor scale={ 1 }/>
     </> )
 }
 

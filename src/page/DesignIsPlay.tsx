@@ -74,6 +74,10 @@ interface shootingStarProps {
     startTime: number
 }
 
+interface playAudioDataStructure {
+    audioPath: string
+}
+
 export function ShootingStar( { startingPosition, startTime }: shootingStarProps ) {
     const texture = useTexture( shootingStar )
     const meshRef = useRef<Mesh>( null )
@@ -115,13 +119,14 @@ export function ShootingStar( { startingPosition, startTime }: shootingStarProps
 }
 
 function Twinkle( { index, position, texturePath, scale, color, onAction }: twinkleProps ) {
+    const svgData = useLoader( SVGLoader, texturePath )
+    const shapes = useMemo( () => ( svgData.paths.map( path => path.toShapes( true ) ) ), [ svgData ] )
     const randomTimeRef = useRef<number>( Math.floor( Math.random() * 100 ) )
     const meshRef = useRef<Mesh>( null )
     const materialRef = useRef<ShaderMaterial>( null )
-    const texture = useTexture( texturePath )
     const twinkleColor = [
         [ 0.25, 0.58, 0.54 ],
-        [ 0.47, 0.37, 1 ],
+        [ 0.47, 0.37, 1    ],
         [ 0.95, 0.14, 0.38 ],
         [ 0.96, 0.77, 0.25 ],
         [ 0.51, 0.09, 0.66 ]
@@ -136,25 +141,30 @@ function Twinkle( { index, position, texturePath, scale, color, onAction }: twin
     return ( <group
         ref={ meshRef }
         position={ [ position.x, position.y, 0 ] }
-        onPointerDown={ () => {
-            if ( meshRef.current ) onAction( index, meshRef.current )
-        } }
     >
-        <mesh
-            scale={ 2.5 }
+        <mesh scale={ [ 0.01, -0.01, 1 ] } position={ [ -1.47, 1.47, 0 ] }
+            onPointerDown={ () => {
+                if ( meshRef.current ) onAction( index, meshRef.current )
+            } }
         >
-            <planeGeometry/>
-            <meshBasicMaterial
-                map={ texture }
-                transparent
-            />
+            { shapes.map( ( shape, index ) => (
+                <mesh key={ index }>
+                    <extrudeGeometry
+                        args={ [ shape, {
+                            depth: 0.1,
+                            bevelEnabled: false,
+                            steps: 1
+                        } ] }
+                    />
+                    <meshBasicMaterial
+                        color={ svgData.paths[ index ].color }
+                        transparent
+                    />
+                </mesh>
+            ) ) }
         </mesh>
-        <mesh
-            renderOrder={ -1 }
-        >
-            <planeGeometry
-                args={ [ scale, scale ] }
-            />
+        <mesh renderOrder={ -1 }>
+            <planeGeometry args={ [ scale, scale ] }/>
             <shaderMaterial
                 ref={ materialRef }
                 transparent
@@ -175,56 +185,32 @@ function Scene() {
     const meshRef = useRef<Mesh>( null )
     const indexRef = useRef<number>( null )
     const backgroundTexture = useTexture( background )
-    // const playTexture = useTexture( playText )
-    const lightScale = useRef<number[]>( new Array( 26 ).fill( 0 ) )
-    const [ hovered ] = useState<boolean>( false )
-    const [ stars, setStars ] = useState<twinkleDataStructure[]>( () =>
+    const [ stars ] = useState<twinkleDataStructure[]>( () =>
         new Array( 26 ).fill( null ).map( ( _, index ) => ( {
             texturePath: new URL( `../assets/play/${ index + 1 }.svg`, import.meta.url ).href,
             ...starsData[ index ]
         } ) )
     )
+    const audios = useMemo<HTMLAudioElement[]>( () => (
+        new Array( 26 ).fill( null ).map( ( _, index ) => {
+            const audio = new Audio()
+            const path = new URL( `../assets/play-audio/${ index + 1 }.mp3`, import.meta.url ).href
 
-    const onPointerDown = ( index: number, node: Mesh ) => {
-        if ( !meshRef.current && false ) {
-            meshRef.current = node
-            indexRef.current = index
-        }
+            audio.src = path
+            audio.preload = "auto"
+            audio.load()
+
+            return audio
+        } )
+    ), [] )
+
+    const onPointerDown = ( index: number) => {
+        const audio = audios[ index ]
+
+        audio.currentTime = 0
+        audio.play()
     }
-
-    const onPointerUp = () => {
-        if ( !meshRef.current && indexRef.current != null ) {
-            const index = indexRef.current
-
-            lightScale.current[ index ] += 0.1 
-
-            setStars( current => {
-                const newStars = [ ...current ]
-                
-                newStars[ index ].scale = lightScale.current[ index ]
-
-                return newStars
-            } )
-
-            meshRef.current = null
-        }
-    }
-
-    // useFrame( ( { mouse } ) => {
-    //     if ( meshRef.current ) {
-    //         const targetX = ( mouse.x * viewport.width ) / 2
-	// 		const targetY = ( mouse.y * viewport.height ) / 2
-
-    //         meshRef.current.position.set( targetX, targetY, 0 )
-    //     }
-    // } )
-
-    useEffect( () => {
-        window.addEventListener( "pointerup", onPointerUp )
-
-        return () => window.removeEventListener( "pointerup", onPointerUp )
-    }, [ onPointerUp ] )
-
+    
     return ( <Suspense fallback={ null }>
         { stars.map( ( star, index ) => (
             <Twinkle
@@ -249,16 +235,12 @@ function Scene() {
             />
         </mesh>
         <Center>
-            <mesh scale={[ 0.01, -0.01, 1 ] } position={ [ 0, 0, 1 ] }>
-                {/* <planeGeometry args={ [ viewport.width, viewport.height ] }/>
-                <meshBasicMaterial
-                    map={ playTexture }
-                /> */}
+            <mesh scale={ [ 0.01, -0.01, 1 ] } position={ [ 0, 0, 2 ] }>
                 { shapes.map( ( shape, index ) => (
-                    <mesh>
+                    <mesh key={ index }>
                         <extrudeGeometry
                             args={ [ shape, {
-                                depth: 0.2,
+                                depth: 0.01,
                                 bevelEnabled: false,
                                 steps: 1
                             } ] }
@@ -304,7 +286,7 @@ function Scene() {
                 startTime={ 0.7 }
             />
         </group>
-        <Cursor hovered={ hovered } scale={ 1 }/>
+        <Cursor scale={ 1 }/>
     </Suspense> )
 }
 
@@ -313,9 +295,7 @@ export default function DesignIsPlay() {
         id="canvas"
         orthographic
         camera={ { zoom: 90, near: -20 } }
-        dpr={ 1 }
     >
-        <OrbitControls/>
         <Scene/>
     </Canvas> )
 }

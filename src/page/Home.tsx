@@ -43,7 +43,6 @@ interface shapeProps {
 }
 
 interface cursorProps {
-	hovered: boolean
 	scale?: number
 }
 
@@ -59,10 +58,18 @@ const triangle = new THREE.Shape()
 const circle = new THREE.Shape()
 	.absarc( 0, 0, 1, 0, Math.PI * 2, false )
 
-export function Cursor( { hovered, scale = 3 }: cursorProps ) {
+export function Cursor( { scale = 3 }: cursorProps ) {
+	const materialRef = useRef<THREE.MeshBasicMaterial>( null )
 	const cursorRef = useRef<THREE.Mesh>( null )
 	const textures = useTexture( [ cursor, pointer ] )
-	
+
+	const onPointerUp = () => {
+		if ( materialRef.current ) materialRef.current.map = textures[ 0 ]
+	}
+	const onPointerDown = () => {
+		if ( materialRef.current ) materialRef.current.map = textures[ 1 ]
+	}
+
 	useFrame( ( { mouse, viewport } ) => {
 		if ( cursorRef.current ) {
 			const targetX = ( mouse.x * viewport.width ) / 2
@@ -72,18 +79,28 @@ export function Cursor( { hovered, scale = 3 }: cursorProps ) {
 		}
 	} )
 
+	useEffect( () => {
+		window.addEventListener( "pointerup", onPointerUp )
+		window.addEventListener( "pointerdown", onPointerDown )
+
+		textures.forEach( texture => {
+			texture.colorSpace = THREE.SRGBColorSpace
+			texture.needsUpdate = true
+		} )
+
+		return () => {
+			window.removeEventListener( "pointerup", onPointerUp )
+			window.removeEventListener( "pointerdown", onPointerDown )
+		}
+	}, [] )
+
 	return ( <mesh ref={ cursorRef } scale={ scale }>
 		<planeGeometry/>
 		<meshBasicMaterial
-			map={ textures[ hovered ? 1 : 0 ] }
-			transparent
+			ref={ materialRef }
+			map={ textures[ 0 ] }
 			toneMapped={ false }
-			onUpdate={ () => {
-				textures.forEach( texture => {
-					texture.colorSpace = THREE.SRGBColorSpace
-					texture.needsUpdate = true
-				} )
-			} }
+			transparent
 		/>
 	</mesh> )
 }
@@ -189,8 +206,6 @@ function Scene() {
 	const { viewport } = useThree()
 	const backgroundTexture = useTexture( background )
 
-	const [ hovered, setHovered ] = useState( false )
-
 	const promptCoordinates = useRef<number[][]>( [ [ -11.55, -12 ], [ 7.8, -12 ], [ 15.2, -12 ] ] )
 	const selectedNode = useRef<RapierRigidBody>( null )
 	const isDragging = useRef<boolean>( false )
@@ -238,7 +253,6 @@ function Scene() {
 			
 			selectedNode.current.setEnabledRotations( false, false, true, true )
 			
-			setHovered( true )
 			setShapes( current => {
 				const newShapes = [ ...current ]
 
@@ -261,7 +275,6 @@ function Scene() {
 				const node = selectedNode.current
 
 				if ( distance < 3 ) {
-					setHovered( false )
 					setShapes( current => {
 						const newShapes = [ ...current ]
 
@@ -291,7 +304,7 @@ function Scene() {
 			isDragging.current = false
 			selectedNode.current = null
 
-			setHovered( false )
+			// setHovered( false )
 			setShapes( current => {
 				const newShapes = [ ...current ]
 
@@ -399,7 +412,7 @@ function Scene() {
 						backgroundTexture.needsUpdate = true
 					} }/>
 				</mesh>
-				<Cursor hovered={ hovered }/>
+				<Cursor/>
 			</Suspense>
 		</Physics>
 	</> )

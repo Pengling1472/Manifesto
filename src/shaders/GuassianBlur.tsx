@@ -77,9 +77,9 @@ void main() {
     for ( float x = -radius; x <= radius; x++ ) {
         for ( float y = -radius; y <= radius; y++ ) {
             vec2 offset = vec2( x, y );
-            vec4 cell = texture2D( uTexture, vUv + offset * uvStride * 0.05 );
+            vec4 cell = texture2D( uTexture, vUv + offset * uvStride * 0.03 );
 
-            float sigma = 2.0;
+            float sigma = 2.5;
             float weight = exp( -0.5 * ( x * x + y * y ) / ( sigma * sigma ) );
 
             color += cell * weight;
