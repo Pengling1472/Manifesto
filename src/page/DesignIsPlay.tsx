@@ -1,4 +1,4 @@
-import { Center, Text, useTexture } from "@react-three/drei"
+import { Text, useTexture } from "@react-three/drei"
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber"
 
 import { TwinkleVertex, TwinkleFragment } from "../shaders/Twinkle"
@@ -12,9 +12,7 @@ import playText from "../assets/svg/play-text.svg"
 import { Cursor } from "./Home"
 import { SVGLoader } from "three/examples/jsm/Addons.js"
 
-import courierPrimeBold from "../assets/fonts/CourierPrime-Bold.ttf"
 import courierPrimeBoldItalic from "../assets/fonts/CourierPrime-BoldItalic.ttf"
-import courierPrimeItalic from "../assets/fonts/CourierPrime-Italic.ttf"
 import courierPrimeRegular from "../assets/fonts/CourierPrime-Regular.ttf"
 
 enum starColors {
@@ -180,11 +178,6 @@ function Twinkle( { index, position, texturePath, scale, color, onAction }: twin
 function Scene() {
     const { viewport } = useThree()
 
-    const svgData = useLoader( SVGLoader, playText )
-    const shapes = useMemo( () => ( svgData.paths.map( path => path.toShapes( true ) ) ), [ svgData ] )
-
-    // const meshRef = useRef<Mesh>( null )
-    // const indexRef = useRef<number>( null )
     const backgroundTexture = useTexture( background )
     const [ stars ] = useState<twinkleDataStructure[]>( () =>
         new Array( 26 ).fill( null ).map( ( _, index ) => ( {
@@ -235,24 +228,6 @@ function Scene() {
                 } }
             />
         </mesh>
-        {/* <Center>
-            <mesh scale={ [ 0.01, -0.01, 1 ] } position={ [ 0, 0, 3 ] }>
-                { shapes.map( ( shape, index ) => (
-                    <mesh key={ index }>
-                        <extrudeGeometry
-                            args={ [ shape, {
-                                depth: 0.01,
-                                bevelEnabled: false,
-                                steps: 1
-                            } ] }
-                        />
-                        <meshBasicMaterial
-                            color={ svgData.paths[ index ].color }
-                        />
-                    </mesh>
-                ) ) }
-            </mesh>
-        </Center> */}
         <group
             position={ [ 0, 0, 3 ] }
         >
