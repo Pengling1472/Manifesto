@@ -1,4 +1,4 @@
-import { Center, useTexture } from "@react-three/drei"
+import { Center, Text, useTexture } from "@react-three/drei"
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber"
 
 import { TwinkleVertex, TwinkleFragment } from "../shaders/Twinkle"
@@ -11,6 +11,11 @@ import playText from "../assets/svg/play-text.svg"
 
 import { Cursor } from "./Home"
 import { SVGLoader } from "three/examples/jsm/Addons.js"
+
+import courierPrimeBold from "../assets/fonts/CourierPrime-Bold.ttf"
+import courierPrimeBoldItalic from "../assets/fonts/CourierPrime-BoldItalic.ttf"
+import courierPrimeItalic from "../assets/fonts/CourierPrime-Italic.ttf"
+import courierPrimeRegular from "../assets/fonts/CourierPrime-Regular.ttf"
 
 enum starColors {
     Green,
@@ -230,8 +235,8 @@ function Scene() {
                 } }
             />
         </mesh>
-        <Center>
-            <mesh scale={ [ 0.01, -0.01, 1 ] } position={ [ 0, 0, 2 ] }>
+        {/* <Center>
+            <mesh scale={ [ 0.01, -0.01, 1 ] } position={ [ 0, 0, 3 ] }>
                 { shapes.map( ( shape, index ) => (
                     <mesh key={ index }>
                         <extrudeGeometry
@@ -247,7 +252,26 @@ function Scene() {
                     </mesh>
                 ) ) }
             </mesh>
-        </Center>
+        </Center> */}
+        <group
+            position={ [ 0, 0, 3 ] }
+        >
+            <Text position={ [ -8.1, 3.3, 0 ] } font={ courierPrimeRegular } anchorX={ "left" } fontSize={ 0.25 } lineHeight={ 1.5 } color={ "#F7E0A8" }>
+                { `We learn best when we forget we're learning.\nAs children, we touched, tested, broke things, and tried again.\nCuriosity came naturally; yet, somewhere along the way...` }
+            </Text>
+            <Text position={ [ -8.1, 2.5, 0 ] } font={ courierPrimeBoldItalic } anchorX={ "left" } fontSize={ 0.3 } color={ "#F7E0A8" }>
+                We traded it in for certainty.
+            </Text>
+            <Text position={ [ 8.3, 0.85, 0 ] } font={ courierPrimeBoldItalic } anchorX={ "right" } fontSize={ 0.67 } color={ "#F7E0A8" }>
+                Design asks for it back.
+            </Text>
+            <Text position={ [ -8.1, -1, 0 ] } font={ courierPrimeRegular } anchorX={ "left" } fontSize={ 0.25 } lineHeight={ 1.5 } color={ "#F7E0A8" }>
+                { `One detail leads to another…\n          ...one discovery opens a door you didn't see coming. ` }
+            </Text>
+            <Text position={ [ -3.4, -3.7, 0 ] } font={ courierPrimeBoldItalic } anchorX={ "left" } fontSize={ 0.32 } color={ "#F7E0A8" }>
+                And suddenly you're inside it, lost in the best possible way.
+            </Text>
+        </group>
         <group position={ [ 0, 0, -0.5 ] }>
             <ShootingStar
                 startingPosition={ { x: 2 + viewport.width / 2 + 3, y: viewport.height / 2 + 3 } }
@@ -282,7 +306,7 @@ function Scene() {
                 startTime={ 0.7 }
             />
         </group>
-        <Cursor scale={ 1 }/>
+        <Cursor scale={ 0.5 }/>
     </Suspense> )
 }
 
