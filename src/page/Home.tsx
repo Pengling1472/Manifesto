@@ -146,7 +146,9 @@ function Shape( { id, text, position, rotation, scale, onAction }: shapeProps ) 
 					position={ [ 0, 0, 3 ] }
 					font={ telegraphBold }
 					fontSize={ 0.75 }
-					textAlign='center'>
+					textAlign='center'
+					color={ "white" }
+				>
 					{ text.replace( /\\n/g, '\n' ) }
 				</Text>
 				<mesh
@@ -403,38 +405,40 @@ function Scene() {
 				>
 					As a‎‎‎‎‎designer, I create‎‎‎‎‎by‎‎‎‎‎.
 				</Text>
-				<Text
-					position={ [ 0, -13, -2.9 ] }
-					font={ courierPrimeBold }
-					fontSize={ 1 }
-					textAlign="center"
-					color="black"
-				>
-					Create
-				</Text>
-				<Center position={ [ 0, -13, -3 ] } scale={ 0.15 }>
-					<mesh
-						onPointerDown={ () => {
-							if ( promptNodes.current.every( node => node != null ) ) redirect()
-						} }
+				<group position={ [ 0, -13, -3 ] }>
+					<Text
+						position={ [ 0, 0, 0.1 ] }
+						font={ courierPrimeBold }
+						fontSize={ 1 }
+						textAlign="center"
+						color="black"
 					>
-						{
-							buttonShapes.map( ( shape, index ) => ( <mesh key={ index }>
-								<extrudeGeometry
-									args={ [ shape, {
-										depth: 0.1,
-										bevelEnabled: false,
-										steps: 1
-									} ] }
-								/>
-								<meshBasicMaterial
-									color={ svgButtonData.paths[ index ].color }
-									transparent
-								/>
-							</mesh> ) )
-						}
-					</mesh>
-				</Center>
+						Create
+					</Text>
+					<Center scale={ 0.15 }>
+						<mesh
+							onPointerDown={ () => {
+								if ( promptNodes.current.every( node => node != null ) ) redirect()
+							} }
+						>
+							{
+								buttonShapes.map( ( shape, index ) => ( <mesh key={ index }>
+									<extrudeGeometry
+										args={ [ shape, {
+											depth: 0.1,
+											bevelEnabled: false,
+											steps: 1
+										} ] }
+									/>
+									<meshBasicMaterial
+										color={ svgButtonData.paths[ index ].color }
+										transparent
+									/>
+								</mesh> ) )
+							}
+						</mesh>
+					</Center>
+				</group>
 				<mesh position={ [ 0, 0, -10 ] }>
 					<planeGeometry args={ [ viewport.width, viewport.height ] }/>
 					<meshBasicMaterial map={ backgroundTexture } toneMapped={ false } onUpdate={ () => {

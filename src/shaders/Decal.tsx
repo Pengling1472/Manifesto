@@ -3,7 +3,7 @@ return /* glsl */`
 varying vec2 vUv;
 
 void main() {
-    vUv = uv;
+	vUv = uv;
 
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4( position, 1.0 );
 }
@@ -15,7 +15,6 @@ return /* glsl */`
 precision mediump float;
 
 uniform sampler2D uTexture;
-uniform sampler2D uBackground;
 
 varying vec2 vUv;
 
@@ -38,16 +37,14 @@ vec3 linearGradient( vec4 colors[ 2 ], float value ) {
 }
 
 void main() {
-    vec4 canvas = texture2D( uTexture, vUv );
-    vec4 background = texture2D( uBackground, vUv );
+	vec4 canvas = texture2D( uTexture, vUv );
 
-    vec4 colors[ 2 ];
+	vec4 colors[ 2 ];
 
-    colors[ 0 ] = vec4( 0.0, 0.0, 0.0, 0.0 );
-    colors[ 1 ] = vec4( background.r, background.g, background.b, 1.0 );
-    
-    if ( canvas.r > 0.0 ) gl_FragColor = vec4( linearGradient( colors, canvas.r ), 1.0 );
-	// gl_FragColor = vec4( background.rgb, 1.0 );
+	colors[ 0 ] = vec4( 0.0, 0.0, 0.0, 0.0 );
+	colors[ 1 ] = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+	gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 - linearGradient( colors, canvas.r ).r );
 }
 `
 }

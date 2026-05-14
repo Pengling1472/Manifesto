@@ -45,10 +45,10 @@ float pnoise(vec3 p) {
     			w.y);
 }
 
-vec3 linearGradient( vec4 colors[ 2 ], float value ) {
+vec3 linearGradient( vec4 colors[ 3 ], float value ) {
 	vec3 rgb = vec3( 0 );
 
-	for ( int i = 1; i < 2; i++ ) {
+	for ( int i = 1; i < 3; i++ ) {
 		vec4 c1 = colors[ i - 1 ];
 		vec4 c2 = colors[ i ];
 
@@ -71,26 +71,31 @@ uniform int id;
 varying vec3 vPosition;
 
 void main() {
-	vec4 colors[ 2 ];
+	vec4 colors[ 3 ];
 
 	if ( id == 0 ) {
-		// SQUARE
-		colors[ 0 ] = vec4( 209.0, 81.0, 36.0, 0.0 );
-		colors[ 1 ] = vec4( 244.0, 176.0, 42.0, 1.0 );
+		// TRIANGLE
+		// colors[ 1 ] = vec4( 253.0, 122.0, 184.0, 0.5 ); //3
+		colors[ 0 ] = vec4( 236.0, 54.0, 132.0, 0.0 ); //2
+		colors[ 1 ] = vec4( 206.0, 255.0, 52.0, 0.99 ); //1
+		colors[ 2 ] = vec4( 206.0, 255.0, 52.0, 1.0 ); //1
 	} else if ( id == 1 ) {
 		// CIRCLE
-		colors[ 0 ] = vec4( 0.0, 105.0, 119.0, 0.0 );
-		colors[ 1 ] = vec4( 192.0, 198.0, 102.0, 1.0 );
+		colors[ 0 ] = vec4( 47.0, 71.0, 159.0, 0.0 ); //1
+		colors[ 1 ] = vec4( 216.0, 117.0, 143.0, 0.5 ); //3
+		colors[ 2 ] = vec4( 248.0, 192.0, 125.0, 1.0 ); // 2
 	} else {
-		// TRIANGLE
-		colors[ 0 ] = vec4( 248.0, 145.0, 0.0, 0.0 );
-		colors[ 1 ] = vec4( 0.0, 105.0, 119.0, 1.0 );
+		// SQUARE
+		colors[ 0 ] = vec4( 60.0, 9.0, 109.0, 0.0 ); //2
+		colors[ 1 ] = vec4( 226.0, 167.0, 223.0, 0.99 ); //3
+		colors[ 2 ] = vec4( 226.0, 167.0, 223.0, 1.0 ); //3
+		// colors[ 2 ] = vec4( 255.0, 247.0, 175.0, 1.0 ); //1
 	}
-
+	
 	float noiseValue = clamp( pnoise( vec3( vPosition.x * 2.5, vPosition.y * 1.5, uTime * 0.2 ) ) * 5.0, 0.0, 1.0 );
 	vec3 gradient = linearGradient( colors, noiseValue );
 
-	gl_FragColor = vec4( gradient.xyz / vec3( 255.0 ), 1 );
+	gl_FragColor = vec4( gradient.xyz / 255.0, 1 );
 }
 `
 }

@@ -9,7 +9,7 @@ PAGES
 import Home from './page/Home'
 import DesignIsMotion from './page/DesignIsMotion'
 
-/* 
+/*
 STYLES
 */
 
