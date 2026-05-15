@@ -93,7 +93,7 @@ void main() {
 	vec4 result = color / kernal;
 
 	vec3 hslColor = rgb2hsl( result.rgb );
-	vec3 newColor = hsl2rgb( vec3( hslColor.x, hslColor.y, hslColor.z - noise( vPosition.xy * 32.0 ) * 0.0015 ) );
+	vec3 newColor = hsl2rgb( vec3( hslColor.x, hslColor.y, hslColor.z - noise( vPosition.xy * 48.0 ) * 0.005 ) );
 	
 	gl_FragColor = vec4( newColor, uOpacity );
 

@@ -6,7 +6,8 @@ import { GuassianBlurVertex, GuassianBlurFragment } from "../shaders/GuassianBlu
 
 import background from "../assets/images/background.png"
 import button from "../assets/svg/home-button.svg"
-import { ShaderMaterial, SRGBColorSpace, RepeatWrapping, Group, Mesh, Material } from "three";
+import music from "../assets/background-music/community.mp3"
+import { ShaderMaterial, SRGBColorSpace, RepeatWrapping, Group, Mesh, Material, AudioListener, Audio, AudioLoader } from "three";
 
 import { ShootingStar } from "./DesignIsPlay";
 import { Cursor } from "./Home";
@@ -135,11 +136,14 @@ function Scene() {
 	const buttonShapes = useMemo( () => ( svgButtonData.paths.map( path => path.toShapes( true ) ) ), [ svgButtonData ] )
 
 	const renderTarget = useFBO()
-	const guassianMaterial = useRef<ShaderMaterial>( null )
-	const textBoxMaterial = useRef<Material>( null )
-	const textMaterial = useRef<Material>( null )
-	const textBox = useRef<Mesh>( null )
+	const listener = useRef<AudioListener>( new AudioListener() )
+	const sound = useRef<Audio>( new Audio( listener.current ) )
+	const guassianMaterial = useRef<ShaderMaterial>( null! )
+	const textBoxMaterial = useRef<Material>( null! )
+	const textMaterial = useRef<Material>( null! )
+	const textBox = useRef<Mesh>( null! )
 	const textRef = useRef<TypeText>( null! )
+	const groupRef = useRef<Group>( null! )
 	const opacity = useRef<number>( 0 )
 	const selectedNode = useRef<Mesh>( null )
 	const nodeID = useRef<number>( 0 )
@@ -157,10 +161,9 @@ function Scene() {
 		} ) )
 	)
 
-	const groupRef = useRef<Group>( null )
 
 	const onPointerDown = ( node: Mesh, index: number ) => {
-		if ( selectedNode.current != null ) return
+		if ( selectedNode.current ) return
 
 		selectedNode.current = node
 		nodeID.current = index
@@ -175,6 +178,8 @@ function Scene() {
 			)
 
 			visibleCharacter.current = 0
+			textTime.current = 0
+
 			textRef.current.text = ``
 		}
 	}
@@ -186,7 +191,7 @@ function Scene() {
 	}
 
 	useFrame( ( { gl }, delta ) => {
-		opacity.current = Math.min( Math.max( opacity.current + ( selectedNode.current == null ? -delta : delta ) * 2, 0 ), 1 )
+		opacity.current = Math.min( Math.max( opacity.current + ( !selectedNode.current ? -delta : delta ) * 2, 0 ), 1 )
 
 		if ( textTime.current > 1 && visibleCharacter.current < dialogues[ letterData[ nodeID.current ] ].length ) {
 			textTime.current = 0
@@ -195,28 +200,24 @@ function Scene() {
 			textRef.current.text = dialogues[ letterData[ nodeID.current ] ].slice( 0, visibleCharacter.current )
 		}
 
-		if ( textBoxMaterial.current && textMaterial.current ) {
-			textMaterial.current.opacity = opacity.current
-			textBoxMaterial.current.opacity = opacity.current
-		}
+		textMaterial.current.opacity = opacity.current
+		textBoxMaterial.current.opacity = opacity.current
 
 		scene.children[ 3 ].visible = false
 		scene.children[ 5 ].visible = false
 		scene.children[ 6 ].visible = false
+		textBox.current.children[ 0 ].visible = false
 
-		if ( textBox.current ) textBox.current.children[ 0 ].visible = false
 		if ( opacity.current > 0 ) scene.children[ 0 ].children[ nodeID.current ].visible = false
 
 		gl.setRenderTarget( renderTarget )
 		gl.render( scene, camera )
 
-		if ( guassianMaterial.current ) {
-			renderTarget.texture.wrapS = RepeatWrapping
-			renderTarget.texture.wrapT = RepeatWrapping
+		renderTarget.texture.wrapS = RepeatWrapping
+		renderTarget.texture.wrapT = RepeatWrapping
 
-			guassianMaterial.current.uniforms.uOpacity.value = opacity.current
-			guassianMaterial.current.uniforms.uTexture.value = renderTarget.texture
-		}
+		guassianMaterial.current.uniforms.uOpacity.value = opacity.current
+		guassianMaterial.current.uniforms.uTexture.value = renderTarget.texture
 
 		gl.setRenderTarget( null )
 
@@ -225,11 +226,10 @@ function Scene() {
 		scene.children[ 3 ].visible = true
 		scene.children[ 5 ].visible = true
 		scene.children[ 6 ].visible = true
+		textBox.current.children[ 0 ].visible = true
 
-		if ( textBox.current ) textBox.current.children[ 0 ].visible = true
-		if ( opacity.current == 1 ) textTime.current += delta * 55
-		if ( groupRef.current && opacity.current < 1 ) {
-			time.current += delta * ( 0.1 * ( 1 - opacity.current ) )
+		if ( opacity.current < 1 ) {
+			time.current += delta * ( 0.08 * ( 1 - opacity.current ) )
 
 			for ( let i = 0; i < groupRef.current.children.length; i++ ) {
 				const x = 3.1 + 4 * Math.PI * i / 33 - time.current * 2
@@ -240,11 +240,25 @@ function Scene() {
 					nodeID.current == i && opacity.current > 0 ? 11 : 6 * Math.sin( 2 * Math.PI * i / 33 - time.current )
 				)
 			}
+		} else {
+			textTime.current += delta * 55
 		}
 	} )
 
 	useEffect( () => {
 		window.addEventListener( "pointerdown", onPointerDownOutside )
+
+		const audioLoader = new AudioLoader()
+		
+		camera.add( listener.current )
+
+		audioLoader.load( music, buffer => {
+			sound.current.setBuffer( buffer )
+			sound.current.setLoop( true )
+			sound.current.setVolume( 1.0 )
+
+			sound.current.play()
+		} )
 
 		return () => window.removeEventListener( "pointerdown", onPointerDownOutside )
 	}, [] )
@@ -261,8 +275,8 @@ function Scene() {
 				/>
 			) ) }
 		</group>
-		<mesh position={ [ 0, 0, -10 ] }>
-			<planeGeometry args={ [ viewport.width, viewport.height ] }/>
+		<mesh position={ [ 0, 0, -10 ] } scale={ viewport.height / 9 }>
+			<planeGeometry args={ [ 16, 9 ] }/>
 			<meshBasicMaterial
 				map={ backgroundTexture }
 				toneMapped={ false }
@@ -328,18 +342,12 @@ function Scene() {
 			/>
 		</group>
 		<group position={ [ 0, -4, 10 ] }>
-			<Text
-				position={ [ 0, 0, 0.1 ] }
-				font={ courierPrimeBold }
-				fontSize={ 0.3 }
-				textAlign="center"
-				color="black"
-			>
-				Home
-			</Text>
-			<Center scale={ 0.045 }>
+			<Center scale={ [ 0.008, -0.008, 0.008 ] }>
 				<mesh
 					onPointerDown={ () => {
+						sound.current.stop()
+						camera.remove( listener.current )
+
 						navigate( "/" )
 					} }
 				>

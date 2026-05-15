@@ -3,7 +3,7 @@ import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber"
 
 import { TwinkleVertex, TwinkleFragment } from "../shaders/Twinkle"
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
-import { SRGBColorSpace, type Mesh, type ShaderMaterial } from "three"
+import { Audio as ThreeAudio, AudioListener, AudioLoader, SRGBColorSpace, type Mesh, type ShaderMaterial } from "three"
 
 import background from "../assets/images/background.png"
 import shootingStar from "../assets/images/shooting-star.png"
@@ -11,10 +11,10 @@ import shootingStar from "../assets/images/shooting-star.png"
 import { Cursor } from "./Home"
 import { SVGLoader } from "three/examples/jsm/Addons.js"
 import button from "../assets/svg/home-button.svg"
+import music from "../assets/background-music/play.mp3"
 
 import courierPrimeBoldItalic from "../assets/fonts/CourierPrime-BoldItalic.ttf"
 import courierPrimeRegular from "../assets/fonts/CourierPrime-Regular.ttf"
-import courierPrimeBold from "../assets/fonts/CourierPrime-Bold.ttf"
 import { useNavigate } from "react-router-dom"
 
 enum starColors {
@@ -176,12 +176,14 @@ function Twinkle( { index, position, texturePath, scale, color, onAction }: twin
 }
 
 function Scene() {
-	const { viewport } = useThree()
+	const { viewport, camera } = useThree()
 	const navigate = useNavigate()
 	
 	const svgButtonData = useLoader( SVGLoader, button )
 	const buttonShapes = useMemo( () => ( svgButtonData.paths.map( path => path.toShapes( true ) ) ), [ svgButtonData ] )
 	
+	const listener = useRef<AudioListener>( new AudioListener() )
+	const sound = useRef<ThreeAudio>( new ThreeAudio( listener.current ) )
 	const backgroundTexture = useTexture( background )
 	const [ stars ] = useState<twinkleDataStructure[]>( () =>
 		new Array( 26 ).fill( null ).map( ( _, index ) => ( {
@@ -210,7 +212,17 @@ function Scene() {
 	}
 
 	useEffect( () => {
-		audios[ 0 ].play()
+		const audioLoader = new AudioLoader()
+		
+		camera.add( listener.current )
+
+		audioLoader.load( music, buffer => {
+			sound.current.setBuffer( buffer )
+			sound.current.setLoop( true )
+			sound.current.setVolume( 1.0 )
+
+			sound.current.play()
+		} )
 	}, [] )
 
 	return ( <Suspense fallback={ null }>
@@ -225,8 +237,8 @@ function Scene() {
 			onAction={ onPointerDown }
 			/>
 		) ) }
-		<mesh position={ [ 0, 0, -1 ] }>
-			<planeGeometry args={ [ viewport.width, viewport.height ] }/>
+		<mesh position={ [ 0, 0, -1 ] } scale={ viewport.height / 9 }>
+			<planeGeometry args={ [ 16, 9 ] }/>
 			<meshBasicMaterial
 				map={ backgroundTexture }
 				toneMapped={ false }
@@ -288,18 +300,11 @@ function Scene() {
 			/>
 		</group>
 		<group position={ [ 0, -4.6, 0 ] }>
-			<Text
-				position={ [ 0, 0, 0.1 ] }
-				font={ courierPrimeBold }
-				fontSize={ 0.35 }
-				textAlign="center"
-				color="black"
-			>
-				Home
-			</Text>
-			<Center scale={ 0.05 }>
+			<Center scale={ [ 0.008, -0.008, 0.008 ] }>
 				<mesh
 					onPointerDown={ () => {
+						sound.current.stop()
+						camera.remove( listener.current )
 						navigate( "/" )
 					} }
 				>

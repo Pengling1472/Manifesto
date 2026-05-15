@@ -3,12 +3,12 @@ import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState, Suspense, useMemo } from 'react'
 
 import telegraphBold from "../assets/fonts/Telegraf_Bold.otf"
-import courierPrimeBold from "../assets/fonts/CourierPrime-Bold.ttf"
 
 import { Physics, RapierRigidBody, RigidBody } from '@react-three/rapier'
 import blurBrush from "../assets/brushes/blur-brush.png"
 import motionBackground from '../assets/images/motion-background.png'
 import button from "../assets/svg/home-button.svg"
+import music from "../assets/background-music/motion.mp3"
 
 import * as THREE from "three"
 
@@ -222,12 +222,14 @@ function DecalComponent( { isDrawing }: decalProps ) {
 }
 
 function Scene() {
-	const { viewport } = useThree()
+	const { viewport, camera } = useThree()
 	const navigate = useNavigate()
 
 	const svgButtonData = useLoader( SVGLoader, button )
 	const buttonShapes = useMemo( () => ( svgButtonData.paths.map( path => path.toShapes( true ) ) ), [ svgButtonData ] )
 
+	const listener = useRef<THREE.AudioListener>( new THREE.AudioListener() )
+	const sound = useRef<THREE.Audio>( new THREE.Audio( listener.current ) )
 	const time = useRef<number>( 0 )
 	const nodeID = useRef<number>( 0 )
 	const selectedNode = useRef<RapierRigidBody>( null )
@@ -281,6 +283,18 @@ function Scene() {
 
 	useEffect( () => {
 		window.addEventListener( "pointerup", handlePointerUp )
+
+		const audioLoader = new THREE.AudioLoader()
+		
+		camera.add( listener.current )
+
+		audioLoader.load( music, buffer => {
+			sound.current.setBuffer( buffer )
+			sound.current.setLoop( true )
+			sound.current.setVolume( 0.5 )
+
+			sound.current.play()
+		} )
 
 		return () => window.removeEventListener( "pointerup", handlePointerUp )
 	}, [] )
@@ -408,18 +422,12 @@ function Scene() {
 				</group>
 				<DecalComponent isDrawing={ isDrawing }/>
 				<group position={ [ 0, -4.6, 1 ] }>
-					<Text
-						position={ [ 0, 0, 0.1 ] }
-						font={ courierPrimeBold }
-						fontSize={ 0.35 }
-						textAlign="center"
-						color="black"
-					>
-						Home
-					</Text>
-					<Center scale={ 0.05 }>
+					<Center scale={ [ 0.008, -0.008, 0.008 ] }>
 						<mesh
 							onPointerDown={ () => {
+								sound.current.stop()
+								camera.remove( listener.current )
+
 								navigate( "/" )
 							} }
 						>

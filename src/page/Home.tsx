@@ -209,7 +209,7 @@ function Border() {
 useTexture.preload( [ cursor, pointer, background ] )
 
 function Scene() {
-	const { viewport } = useThree()
+	const { viewport, camera } = useThree()
 	const backgroundTexture = useTexture( background )
 
 	const svgButtonData = useLoader( SVGLoader, button )
@@ -357,8 +357,12 @@ function Scene() {
 	useEffect( () => {
 		window.addEventListener( "pointerup", onPointerUp )
 
+		const listener = camera.children.find( child => child instanceof AudioListener )
+
+		if ( listener ) camera.remove( listener )
+
 		return () => window.removeEventListener( "pointerup", onPointerUp )
-	}, [ onPointerUp ] )
+	}, [] )
 
 	return ( <>
 		<Physics gravity={ [ 0, 0, 0 ] }>
@@ -409,13 +413,13 @@ function Scene() {
 					<Text
 						position={ [ 0, 0, 0.1 ] }
 						font={ courierPrimeBold }
-						fontSize={ 1 }
+						fontSize={ 0.7 }
 						textAlign="center"
 						color="black"
 					>
 						Create
 					</Text>
-					<Center scale={ 0.15 }>
+					<Center scale={ [ 0.03, -0.03, 0.03 ] }>
 						<mesh
 							onPointerDown={ () => {
 								if ( promptNodes.current.every( node => node != null ) ) redirect()
