@@ -409,6 +409,14 @@ function Scene() {
 				>
 					As a‎‎‎‎‎designer, I create‎‎‎‎‎by‎‎‎‎‎.
 				</Text>
+				<Text
+					position={ [ 0, 14, -3 ] }
+					font={ telegraphRegular }
+					fontSize={ 0.5 }
+					textAlign='center'
+				>
+					Presents to you from Marthin Villar, Livie Lam, Jenny Pham. 
+				</Text>
 				<group position={ [ 0, -13, -3 ] }>
 					<Text
 						position={ [ 0, 0, 0.1 ] }
