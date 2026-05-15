@@ -232,11 +232,9 @@ function Scene() {
 			time.current += delta * ( 0.08 * ( 1 - opacity.current ) )
 
 			for ( let i = 0; i < groupRef.current.children.length; i++ ) {
-				const x = 3.1 + 4 * Math.PI * i / 33 - time.current * 2
-
 				groupRef.current.children[ i ].position.set(
 					6 * Math.cos( 2 * Math.PI * i / 33 - time.current ),
-					1.5 * Math.sin( x ) + Math.sin( 1.7 * x ) / 2,
+					1.5 * Math.sin( 3.1 + 4 * Math.PI * i / 33 - time.current * 2 ),
 					nodeID.current == i && opacity.current > 0 ? 11 : 6 * Math.sin( 2 * Math.PI * i / 33 - time.current )
 				)
 			}
