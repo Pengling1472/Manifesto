@@ -419,7 +419,7 @@ function Scene() {
 					>
 						Create
 					</Text>
-					<Center scale={ [ 0.03, -0.03, 0.03 ] }>
+					<Center scale={ [ 0.025, -0.025, 0.025 ] }>
 						<mesh
 							onPointerDown={ () => {
 								if ( promptNodes.current.every( node => node != null ) ) redirect()
