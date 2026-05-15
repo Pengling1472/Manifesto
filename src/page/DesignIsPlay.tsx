@@ -82,9 +82,10 @@ interface shootingStarProps {
 interface oumuamuaProps {
 	begginingToEndPosition?: number
 	scale?: number
+	rotationSpeed?: number
 }
 
-export function Oumuamua( { begginingToEndPosition = 55, scale = 0.25 }: oumuamuaProps ) {
+export function Oumuamua( { begginingToEndPosition = 55, scale = 0.25, rotationSpeed = 0.1 }: oumuamuaProps ) {
 	const { scene } = useGLTF( "/oumuamua.glb" )
 
 	const oumuamuaRef = useRef<Mesh>( null )
@@ -114,7 +115,7 @@ export function Oumuamua( { begginingToEndPosition = 55, scale = 0.25 }: oumuamu
 			const rotation = oumuamuaRef.current.rotation
 
 			oumuamuaRef.current.position.set( position.x + delta * 0.3, position.y, position.z )
-			oumuamuaRef.current.rotation.set( 0, 0, rotation.z + Math.PI / 180 * delta * 0.1 )
+			oumuamuaRef.current.rotation.set( 0, 0, rotation.z + Math.PI / 180 * delta * rotationSpeed )
 
 			if ( position.x >= begginingToEndPosition ) {
 				oumuamuaRef.current.visible = false

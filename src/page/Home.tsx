@@ -460,7 +460,7 @@ function Scene() {
 					} }/>
 				</mesh>
 				<Cursor/>
-				<Oumuamua begginingToEndPosition={ 157 } scale={ 0.75 }/>
+				<Oumuamua begginingToEndPosition={ 157 } scale={ 0.75 } rotationSpeed={ 0.01 }/>
 			</Suspense>
 		</Physics>
 	</> )
