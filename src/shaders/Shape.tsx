@@ -75,7 +75,6 @@ void main() {
 
 	if ( id == 0 ) {
 		// TRIANGLE
-		// colors[ 1 ] = vec4( 253.0, 122.0, 184.0, 0.5 ); //3
 		colors[ 0 ] = vec4( 236.0, 54.0, 132.0, 0.0 ); //2
 		colors[ 1 ] = vec4( 206.0, 255.0, 52.0, 0.99 ); //1
 		colors[ 2 ] = vec4( 206.0, 255.0, 52.0, 1.0 ); //1
@@ -89,7 +88,6 @@ void main() {
 		colors[ 0 ] = vec4( 60.0, 9.0, 109.0, 0.0 ); //2
 		colors[ 1 ] = vec4( 226.0, 167.0, 223.0, 0.99 ); //3
 		colors[ 2 ] = vec4( 226.0, 167.0, 223.0, 1.0 ); //3
-		// colors[ 2 ] = vec4( 255.0, 247.0, 175.0, 1.0 ); //1
 	}
 	
 	float noiseValue = clamp( pnoise( vec3( vPosition.x * 2.5, vPosition.y * 1.5, uTime * 0.2 ) ) * 5.0, 0.0, 1.0 );

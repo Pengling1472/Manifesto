@@ -1,5 +1,6 @@
-import { Center, Text, useTexture } from "@react-three/drei"
+import { Center, Text, useGLTF, useTexture } from "@react-three/drei"
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber"
+import { useNavigate } from "react-router-dom"
 
 import { TwinkleVertex, TwinkleFragment } from "../shaders/Twinkle"
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
@@ -15,7 +16,6 @@ import music from "../assets/background-music/play.mp3"
 
 import courierPrimeBoldItalic from "../assets/fonts/CourierPrime-BoldItalic.ttf"
 import courierPrimeRegular from "../assets/fonts/CourierPrime-Regular.ttf"
-import { useNavigate } from "react-router-dom"
 
 enum starColors {
 	Green,
@@ -77,6 +77,65 @@ interface twinkleDataStructure {
 interface shootingStarProps {
 	startingPosition: { x: number, y: number }
 	startTime: number
+}
+
+interface oumuamuaProps {
+	begginingToEndPosition?: number
+	scale?: number
+}
+
+export function Oumuamua( { begginingToEndPosition = 55, scale = 0.25 }: oumuamuaProps ) {
+	const { scene } = useGLTF( "/oumuamua.glb" )
+
+	const oumuamuaRef = useRef<Mesh>( null )
+	const oumuamuaTimer = useRef<number>( 0 )
+
+	const resetTimer = () => {
+		if ( oumuamuaTimer.current < 180 ) oumuamuaTimer.current = 0
+	}
+
+	useEffect( () => {
+		window.addEventListener( "mousemove", resetTimer )
+		window.addEventListener( "keydown", resetTimer )
+
+		return () => {
+			window.removeEventListener( "mousemove", resetTimer )
+			window.removeEventListener( "keydown", resetTimer )
+		}
+	}, [] )
+
+	useFrame( ( _, delta ) => {
+		oumuamuaTimer.current += delta
+
+		if ( oumuamuaTimer.current >= 180 && oumuamuaRef.current ) {
+			oumuamuaRef.current.visible = true
+			
+			const position = oumuamuaRef.current.position
+			const rotation = oumuamuaRef.current.rotation
+
+			oumuamuaRef.current.position.set( position.x + delta * 0.3, position.y, position.z )
+			oumuamuaRef.current.rotation.set( 0, 0, rotation.z + Math.PI / 180 * delta * 0.1 )
+
+			if ( position.x >= begginingToEndPosition ) {
+				oumuamuaRef.current.visible = false
+				oumuamuaRef.current = null
+			}
+		}
+	} )
+
+	return ( <group>
+		<Suspense fallback={ null }>
+			<group
+				ref={ oumuamuaRef }
+				visible={ false }
+				scale={ scale }
+				position={ [ -begginingToEndPosition, 0, 2 ] }
+				rotation={ [ 0, 0, Math.PI / 180 * -10 ] }
+			>
+				<primitive object={ scene }/>
+			</group>
+		</Suspense>
+	</group> )
 }
 
 export function ShootingStar( { startingPosition, startTime }: shootingStarProps ) {
@@ -325,6 +384,7 @@ function Scene() {
 			</Center>
 		</group>
 		<Cursor scale={ 0.5 }/>
+		<Oumuamua begginingToEndPosition={ 52 }/>
 	</Suspense> )
 }
 
@@ -334,6 +394,7 @@ export default function DesignIsPlay() {
 		orthographic
 		camera={ { zoom: 90, near: -20 } }
 	>
+		<ambientLight/>
 		<Scene/>
 	</Canvas> )
 }

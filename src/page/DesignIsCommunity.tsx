@@ -9,7 +9,7 @@ import button from "../assets/svg/home-button.svg"
 import music from "../assets/background-music/community.mp3"
 import { ShaderMaterial, SRGBColorSpace, RepeatWrapping, Group, Mesh, Material, AudioListener, Audio, AudioLoader } from "three";
 
-import { ShootingStar } from "./DesignIsPlay";
+import { Oumuamua, ShootingStar } from "./DesignIsPlay";
 import { Cursor } from "./Home";
 import { SVGLoader } from "three/examples/jsm/Addons.js";
 
@@ -206,6 +206,7 @@ function Scene() {
 		scene.children[ 3 ].visible = false
 		scene.children[ 5 ].visible = false
 		scene.children[ 6 ].visible = false
+		scene.children[ 7 ].visible = false
 		textBox.current.children[ 0 ].visible = false
 
 		if ( opacity.current > 0 ) scene.children[ 0 ].children[ nodeID.current ].visible = false
@@ -226,6 +227,7 @@ function Scene() {
 		scene.children[ 3 ].visible = true
 		scene.children[ 5 ].visible = true
 		scene.children[ 6 ].visible = true
+		scene.children[ 7 ].visible = true
 		textBox.current.children[ 0 ].visible = true
 
 		if ( opacity.current < 1 ) {
@@ -297,7 +299,7 @@ function Scene() {
 			<shaderMaterial
 				ref={ guassianMaterial }
 				transparent={ true }
-				toneMapped={ true }
+				toneMapped={ false }
 				vertexShader={ GuassianBlurVertex() }
 				fragmentShader={ GuassianBlurFragment() }
 				uniforms={ { uTexture: { value: null }, uOpacity: { value: 1.0 }, uvStride: { value: [ 1 / viewport.width, 1 / viewport.height ] } } }
@@ -367,6 +369,8 @@ function Scene() {
 			</Center>
 		</group>
 		<Cursor scale={ 0.5 }/>
+		<ambientLight/>
+		<Oumuamua begginingToEndPosition={ 51 }/>
 	</> )
 }
 

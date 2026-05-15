@@ -15,7 +15,7 @@ import * as THREE from "three"
 import { DecalVertex, DecalFragment } from '../shaders/Decal'
 
 import { Cursor } from './Home'
-import { ShootingStar } from './DesignIsPlay'
+import { Oumuamua, ShootingStar } from './DesignIsPlay'
 
 import trail1 from "../assets/motion/1-trail.png"
 import trail2 from "../assets/motion/2-trail.png"
@@ -450,17 +450,15 @@ function Scene() {
 					</Center>
 				</group>
 				<Cursor scale={ 1 }/>
+				<Oumuamua begginingToEndPosition={ 53 }/>
 			</Suspense>
 		</Physics>
 	</> )
 }
 
 export default function DesignIsMotion() {
-	return (
-		<section className='design-is-motion'>
-			<Canvas id='canvas' orthographic camera={ { zoom: 90, near: -20 } } dpr={ 1 }>
-				<Scene/>
-			</Canvas>
-		</section>
-	)
+	return ( <Canvas id='canvas' orthographic camera={ { zoom: 90, near: -20 } } dpr={ 1 }>
+		<ambientLight/>
+		<Scene/>
+	</Canvas> )
 }

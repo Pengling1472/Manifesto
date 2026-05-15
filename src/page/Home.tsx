@@ -19,6 +19,7 @@ import button from "../assets/svg/home-button.svg"
 import { SVGLoader } from 'three/examples/jsm/Addons.js'
 
 import courierPrimeBold from "../assets/fonts/CourierPrime-Bold.ttf"
+import { Oumuamua } from './DesignIsPlay.tsx'
 
 enum PMCTypes {
 	Play,
@@ -459,19 +460,19 @@ function Scene() {
 					} }/>
 				</mesh>
 				<Cursor/>
+				<Oumuamua begginingToEndPosition={ 157 } scale={ 0.75 }/>
 			</Suspense>
 		</Physics>
 	</> )
 }
 
 export default function Home() {
-	return ( <>
-		<Canvas
-			id='canvas'
-			orthographic
-			camera={ { zoom: 30, near: -20 } }
-		>
-			<Scene/>
-		</Canvas>
-	</> )
+	return ( <Canvas
+		id='canvas'
+		orthographic
+		camera={ { zoom: 30, near: -20 } }
+	>
+		<ambientLight/>
+		<Scene/>
+	</Canvas> )
 }
